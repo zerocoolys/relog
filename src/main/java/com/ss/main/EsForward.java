@@ -1,9 +1,8 @@
 package com.ss.main;
 
 import com.ss.config.JRedisPools;
-import com.ss.vo.MessageObject;
-import io.netty.handler.codec.http.QueryStringDecoder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -12,24 +11,27 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import redis.clients.jedis.Jedis;
 
 import java.lang.reflect.Constructor;
+import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Created by yousheng on 15/3/16.
  */
-public class EsForward {
+public class EsForward implements Constants {
 
-    private static final LinkedBlockingQueue<MessageObject> messages = new LinkedBlockingQueue<>();
-    private static final String TRACKID = "t";
+//    private static final LinkedBlockingQueue<MessageObject> messages = new LinkedBlockingQueue<>();
+//    private static final String TRACKID = "t";
     private static final String TRACKID_REG = "\"t\":\"\\d+";
 
     private static TransportClient client = null;
     private static Map<String, String> esMap = new HashMap<>();
+
+    private final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
 
     static {
         if (client == null) {
@@ -43,6 +45,7 @@ public class EsForward {
 
     public EsForward() {
         init();
+        handleRequest();
     }
 
 
@@ -51,20 +54,15 @@ public class EsForward {
 //    }
 
     private void init() {
-
-
 //        Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", "es-cluster").put("client.transport.sniff", true).build();
-//
 //        client = new TransportClient(settings);
-//
 //        client.addTransportAddress(new InetSocketTransportAddress("192.168.1.120", 19300));
-
 
         int num = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(num);
         for (int i = 0; i < num; i++) {
             executor.execute(() -> {
-                BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+//                BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 
                 while (true) {
 //                MessageObject message = null;
@@ -107,36 +105,52 @@ public class EsForward {
                     Jedis jedis = null;
                     try {
                         jedis = JRedisPools.getConnection();
-                        String source = jedis.rpop(RedisForward.ACCESS_MESSAGE);
+                        String source = jedis.rpop(ACCESS_MESSAGE);
                         if (source != null) {
                             Matcher matcher = Pattern.compile(TRACKID_REG).matcher(source);
                             if (matcher.find()) {
                                 String trackId = matcher.group().replace("\"t\":\"", "");
 
-                                Calendar calendar = Calendar.getInstance();
-                                builder.setIndex("access-" + calendar.get(Calendar.YEAR) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.DATE));
+                                LocalDate localDate = LocalDate.now();
+                                builder.setIndex("access-" + localDate.getYear() + "-" + localDate.getMonthValue() + "-" + localDate.getDayOfMonth());
                                 builder.setType(trackId);
                                 builder.setSource(source);
 
-                                bulkRequestBuilder.add(builder.request());
+//                                bulkRequestBuilder.add(builder.request());
+                                requestQueue.add(builder.request());
                             }
                         }
                     } finally {
                         JRedisPools.returnJedis(jedis);
                     }
 
-                    if (bulkRequestBuilder.numberOfActions() == 500) {
-                        bulkRequestBuilder.get();
-                        bulkRequestBuilder = client.prepareBulk();
-                    }
+//                    if (bulkRequestBuilder.numberOfActions() == 500) {
+//                        bulkRequestBuilder.get();
+//                        bulkRequestBuilder = client.prepareBulk();
+//                    }
                 }
             });
         }
 
-//        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()).execute(() -> {
-//
-//        });
+    }
 
+    private void handleRequest() {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+            while (true) {
+                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                } else if (!requestQueue.isEmpty()) {
+                    bulkRequestBuilder.add(requestQueue.poll());
+                    if (bulkRequestBuilder.numberOfActions() == 1_000) {
+                        bulkRequestBuilder.get();
+                        bulkRequestBuilder = client.prepareBulk();
+                    }
+                }
+
+            }
+        });
     }
 
     private static TransportClient initEsClient() {

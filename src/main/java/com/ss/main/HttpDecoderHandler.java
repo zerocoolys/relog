@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Created by yousheng on 15/3/16.
  */
-public class HttpDecoderHandler extends ChannelInboundHandlerAdapter {
+public class HttpDecoderHandler extends ChannelInboundHandlerAdapter implements Constants {
 
     private static final String TRACKID = "t";
 
@@ -33,30 +33,38 @@ public class HttpDecoderHandler extends ChannelInboundHandlerAdapter {
                 QueryStringDecoder decoder = new QueryStringDecoder(req.getUri());
 
                 if (decoder.parameters().get(TRACKID) != null) {
-                    MessageObject mo = new MessageObject();
-                    mo.setHttpMessage(req);
-                    mo.add("remote", ctx.channel().remoteAddress().toString().substring(1));
-
-                    Map<String, Object> source = new HashMap<>();
-
-                    source.putAll(mo.getAttribute());
-                    source.put("method", mo.getHttpMessage().getMethod());
-                    source.put("version", mo.getHttpMessage().getProtocolVersion());
-                    source.put("utime", Instant.now().getEpochSecond());
-                    mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
-
-                    decoder.parameters().forEach((k, v) -> {
-                        if (v.isEmpty())
-                            source.put(k, "");
-                        else
-                            source.put(k, v.get(0));
-                    });
-
-                    //EsForward.push(mo);
                     Jedis jedis = null;
                     try {
                         jedis = JRedisPools.getConnection();
-                        jedis.lpush(RedisForward.ACCESS_MESSAGE, JSON.toJSONString(source));
+
+                        MessageObject mo = new MessageObject();
+                        mo.setHttpMessage(req);
+                        String remote = ctx.channel().remoteAddress().toString().substring(1);
+                        mo.add(REMOTE, remote);
+                        mo.add(METHOD, req.getMethod().toString());
+                        mo.add(VERSION, req.getProtocolVersion().toString());
+                        mo.add(UNIX_TIME, Instant.now().getEpochSecond());
+
+                        String remoteIp = remote.split(":")[0];
+                        String city = jedis.hget(IP_AREA_INFO, remoteIp);
+                        if (city == null) {
+                            city = IPParser.getArea(remoteIp);
+                            jedis.hset(IP_AREA_INFO, remoteIp, city);
+                        }
+                        mo.add(CITY, city);
+
+                        Map<String, Object> source = new HashMap<>();
+                        source.putAll(mo.getAttribute());
+                        mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
+
+                        decoder.parameters().forEach((k, v) -> {
+                            if (v.isEmpty())
+                                source.put(k, "");
+                            else
+                                source.put(k, v.get(0));
+                        });
+
+                        jedis.lpush(ACCESS_MESSAGE, JSON.toJSONString(source));
                     } finally {
                         JRedisPools.returnJedis(jedis);
                     }
