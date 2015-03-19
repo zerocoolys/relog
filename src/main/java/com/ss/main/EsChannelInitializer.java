@@ -3,6 +3,9 @@ package com.ss.main;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.HttpServerCodec;
 
 /**
@@ -13,7 +16,10 @@ public class EsChannelInitializer extends ChannelInitializer {
     @Override
     protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(new HttpServerCodec());
+//        pipeline.addLast(new HttpServerCodec());
+        pipeline.addLast(new HttpRequestDecoder());
+        pipeline.addLast(new HttpResponseEncoder());
+        pipeline.addLast(new HttpContentCompressor());
         pipeline.addLast(new HttpDecoderHandler());
     }
 }
