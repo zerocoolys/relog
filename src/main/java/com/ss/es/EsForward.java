@@ -1,18 +1,14 @@
-package com.ss.main;
+package com.ss.es;
 
 import com.ss.config.JRedisPools;
+import com.ss.main.Constants;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import redis.clients.jedis.Jedis;
 
-import java.lang.reflect.Constructor;
 import java.time.LocalDate;
-import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,22 +22,22 @@ public class EsForward implements Constants {
 
 //    private static final LinkedBlockingQueue<MessageObject> messages = new LinkedBlockingQueue<>();
 //    private static final String TRACKID = "t";
-    private static final String TRACKID_REG = "\"t\":\"\\d+";
+//    private static TransportClient client = null;
+//    private static Map<String, String> esMap = new HashMap<>();
 
-    private static TransportClient client = null;
-    private static Map<String, String> esMap = new HashMap<>();
+    private static final String TRACKID_REG = "\"t\":\"\\d+";
 
     private final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
 
-    static {
-        if (client == null) {
-            synchronized (EsForward.class) {
-                if (client == null) {
-                    client = initEsClient();
-                }
-            }
-        }
-    }
+//    static {
+//        if (client == null) {
+//            synchronized (EsForward.class) {
+//                if (client == null) {
+//                    client = initEsClient();
+//                }
+//            }
+//        }
+//    }
 
     public EsForward() {
         init();
@@ -60,6 +56,7 @@ public class EsForward implements Constants {
 
         int num = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(num);
+        TransportClient client = EsPools.getEsClient();
         for (int i = 0; i < num; i++) {
             executor.execute(() -> {
 //                BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -136,6 +133,7 @@ public class EsForward implements Constants {
 
     private void handleRequest() {
         Executors.newSingleThreadExecutor().execute(() -> {
+            TransportClient client = EsPools.getEsClient();
             BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             while (true) {
                 if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
@@ -153,34 +151,34 @@ public class EsForward implements Constants {
         });
     }
 
-    private static TransportClient initEsClient() {
-        TransportClient client = null;
-        try {
-            ResourceBundle bundle = ResourceBundle.getBundle("elasticsearch");
-            String[] hosts = bundle.getString("es.host").split(",");
-            List<InetSocketTransportAddress> addressList = new ArrayList<>();
-            for (String host : hosts) {
-                String[] arr = host.split(":");
-                if (arr.length == 1)
-                    addressList.add(new InetSocketTransportAddress(arr[0], 19300));
-                else if (arr.length == 2)
-                    addressList.add(new InetSocketTransportAddress(arr[0], Integer.valueOf(arr[1])));
-
-            }
-            String clusterName = bundle.getString("es.cluster");
-
-            //设置client.transport.sniff为true来使客户端去嗅探整个集群的状态, 把集群中其它机器的ip地址加到客户端中
-            Settings settings = ImmutableSettings.settingsBuilder().put(esMap).put("cluster.name", clusterName).put("client.transport.sniff", true).build();
-            Class<?> clazz = Class.forName(TransportClient.class.getName());
-            Constructor<?> constructor = clazz.getDeclaredConstructor(Settings.class);
-            constructor.setAccessible(true);
-            client = (TransportClient) constructor.newInstance(settings);
-            client.addTransportAddresses(addressList.toArray(new InetSocketTransportAddress[addressList.size()]));
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-
-        return client;
-    }
+//    private static TransportClient initEsClient() {
+//        TransportClient client = null;
+//        try {
+//            ResourceBundle bundle = ResourceBundle.getBundle("elasticsearch");
+//            String[] hosts = bundle.getString("es.host").split(",");
+//            List<InetSocketTransportAddress> addressList = new ArrayList<>();
+//            for (String host : hosts) {
+//                String[] arr = host.split(":");
+//                if (arr.length == 1)
+//                    addressList.add(new InetSocketTransportAddress(arr[0], 19300));
+//                else if (arr.length == 2)
+//                    addressList.add(new InetSocketTransportAddress(arr[0], Integer.valueOf(arr[1])));
+//
+//            }
+//            String clusterName = bundle.getString("es.cluster");
+//
+//            //设置client.transport.sniff为true来使客户端去嗅探整个集群的状态, 把集群中其它机器的ip地址加到客户端中
+//            Settings settings = ImmutableSettings.settingsBuilder().put(esMap).put("cluster.name", clusterName).put("client.transport.sniff", true).build();
+//            Class<?> clazz = Class.forName(TransportClient.class.getName());
+//            Constructor<?> constructor = clazz.getDeclaredConstructor(Settings.class);
+//            constructor.setAccessible(true);
+//            client = (TransportClient) constructor.newInstance(settings);
+//            client.addTransportAddresses(addressList.toArray(new InetSocketTransportAddress[addressList.size()]));
+//        } catch (final Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return client;
+//    }
 
 }

@@ -2,6 +2,7 @@ package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
 import com.ss.config.JRedisPools;
+import com.ss.es.EsOperator;
 import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -10,11 +11,7 @@ import io.netty.util.CharsetUtil;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -45,6 +42,8 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                 QueryStringDecoder decoder = new QueryStringDecoder(req.getUri());
 
                 if (decoder.parameters().get(TRACKID) != null) {
+                    Map<String, Object> source = new HashMap<>();
+                    Set<Cookie> cookies = null;
                     Jedis jedis = null;
                     try {
                         jedis = JRedisPools.getConnection();
@@ -55,7 +54,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         mo.add(REMOTE, remote);
                         mo.add(METHOD, req.getMethod().toString());
                         mo.add(VERSION, req.getProtocolVersion().toString());
-                        mo.add(UNIX_TIME, Instant.now().getEpochSecond());
+                        mo.add(UNIX_TIME, System.currentTimeMillis());
 
                         String remoteIp = remote.split(":")[0];
                         String city = jedis.hget(IP_AREA_INFO, remoteIp);
@@ -65,7 +64,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         }
                         mo.add(CITY, city);
 
-                        Map<String, Object> source = new HashMap<>();
                         source.putAll(mo.getAttribute());
                         mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
 
@@ -76,6 +74,14 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                                 source.put(k, v.get(0));
                         });
 
+                        cookies = handleCookies(req);
+                        for (Cookie cookie : cookies) {
+                            if (VISITOR_IDENTIFIER.equals(cookie.getName())) {
+                                source.put(VISITOR_IDENTIFIER, cookie.getValue());
+                                break;
+                            }
+                        }
+
                         jedis.lpush(ACCESS_MESSAGE, JSON.toJSONString(source));
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -83,7 +89,9 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         JRedisPools.returnJedis(jedis);
                     }
 
-                    writeResponse(ctx.channel());
+                    writeResponse(ctx.channel(), cookies);
+
+                    EsOperator.push(source);
                 }
 
             }
@@ -91,8 +99,10 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
         }
     }
 
-    private void writeResponse(Channel channel) {
+    private void writeResponse(Channel channel, Set<Cookie> cookies) {
         // Convert the response content to a ChannelBuffer.
+//        byte[] bytes = Base64.getDecoder().decode(GifParser.base64String);
+//        ByteBuf buf = copiedBuffer(bytes);
         ByteBuf buf = copiedBuffer(responseContent.toString(), CharsetUtil.UTF_8);
         responseContent.setLength(0);
 
@@ -112,25 +122,73 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
             response.headers().set(CONTENT_LENGTH, buf.readableBytes());
         }
 
-        Set<Cookie> cookies;
-        String value = request.headers().get(COOKIE);
-        if (value == null) {
-            cookies = Collections.emptySet();
-        } else {
-            cookies = CookieDecoder.decode(value);
-        }
-        if (!cookies.isEmpty()) {
-            // Reset the cookies if necessary.
-            for (Cookie cookie : cookies) {
-                response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie));
-            }
-        }
+        cookies.forEach(cookie -> response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie)));
+
+//        Set<Cookie> cookies;
+//        String value = request.headers().get(COOKIE);
+//        if (value == null) {
+//            cookies = Collections.emptySet();
+//        } else {
+//            cookies = CookieDecoder.decode(value);
+//        }
+//
+//        boolean hasVid = false;
+//        String vid;
+//        if (!cookies.isEmpty()) {
+//            // Reset the cookies if necessary.
+//            for (Cookie cookie : cookies) {
+//                if (VISITOR_IDENTIFIER.equals(cookie.getName()))
+//                    hasVid = true;
+//                response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie));
+//            }
+//
+//            if (!hasVid) {
+//                vid = UUID.randomUUID().toString().replaceAll("-", "");
+//                response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(new DefaultCookie(VISITOR_IDENTIFIER, vid)));
+//            }
+//        } else {
+//            // generate vid and add to cookie
+//            vid = UUID.randomUUID().toString().replaceAll("-", "");
+//            response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(new DefaultCookie(VISITOR_IDENTIFIER, vid)));
+//        }
         // Write the response.
         ChannelFuture future = channel.writeAndFlush(response);
         // Close the connection after the write operation is done if necessary.
         if (close) {
             future.addListener(ChannelFutureListener.CLOSE);
         }
+    }
+
+    private Set<Cookie> handleCookies(HttpRequest request) {
+        Set<Cookie> cookies;
+        String value = request.headers().get(COOKIE);
+        if (value == null) {
+//            cookies = Collections.emptySet();
+            cookies = new HashSet<>();
+        } else {
+            cookies = CookieDecoder.decode(value);
+        }
+
+        boolean hasVid = false;
+        String vid;
+        if (!cookies.isEmpty()) {
+            for (Cookie cookie : cookies) {
+                if (VISITOR_IDENTIFIER.equals(cookie.getName())) {
+                    hasVid = true;
+                    break;
+                }
+            }
+
+            if (!hasVid) {
+                vid = UUID.randomUUID().toString().replaceAll("-", "");
+                cookies.add(new DefaultCookie(VISITOR_IDENTIFIER, vid));
+            }
+        } else {
+            vid = UUID.randomUUID().toString().replaceAll("-", "");
+            cookies.add(new DefaultCookie(VISITOR_IDENTIFIER, vid));
+        }
+
+        return cookies;
     }
 
     @Override

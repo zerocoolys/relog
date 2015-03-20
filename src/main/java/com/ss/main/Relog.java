@@ -1,5 +1,7 @@
 package com.ss.main;
 
+import com.ss.es.EsForward;
+import com.ss.es.EsOperator;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -14,7 +16,7 @@ public class Relog {
     public static void main(String[] args) {
 
         new EsForward();
-
+        new EsOperator();
 
         ServerBootstrap bootstrap = new ServerBootstrap();
 
