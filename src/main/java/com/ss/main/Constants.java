@@ -16,4 +16,6 @@ public interface Constants {
     public static final String CITY = "city";
     public static final String UNIX_TIME = "utime";
 
+    // statistics
+    public static final String VISITOR_IDENTIFIER = "vid";     // 访客标识码
 }
