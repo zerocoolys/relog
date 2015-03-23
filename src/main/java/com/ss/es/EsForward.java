@@ -20,15 +20,12 @@ import java.util.regex.Pattern;
  */
 public class EsForward implements ElasticRequest, Constants {
 
-//    private static final LinkedBlockingQueue<MessageObject> messages = new LinkedBlockingQueue<>();
-//    private static final String TRACKID = "t";
-//    private static TransportClient client = null;
-
+    // vid -> 访客唯一标识符； tt -> UV
     private static final String TRACKID_REG = "\"t\":\"\\d+";
-    private static final String VISITOR_IDENTIFIER_REG = "\"vid\":\"[0-9a-zA-Z]+";
+    private static final String VISITOR_IDENTIFIER_REG = "\"tt\":\"[0-9a-zA-Z]+";
 
     private final TransportClient client;
-    private final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>(); // PV
 
 
     public EsForward() {
@@ -38,57 +35,13 @@ public class EsForward implements ElasticRequest, Constants {
     }
 
 
-//    public static void push(MessageObject httpMessage) {
-//        messages.offer(httpMessage);
-//    }
-
     private void init() {
-//        Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", "es-cluster").put("client.transport.sniff", true).build();
-//        client = new TransportClient(settings);
-//        client.addTransportAddress(new InetSocketTransportAddress("192.168.1.120", 19300));
-
         int num = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(num);
-//        TransportClient client = EsPools.getEsClient();
         for (int i = 0; i < num; i++) {
             executor.execute(() -> {
-//                BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 
                 while (true) {
-//                MessageObject message = null;
-//                try {
-//                    message = messages.take();
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                if (message == null) {
-//                    continue;
-//                }
-//                String request = message.getHttpMessage().getUri();
-//                if (!request.contains("?t=")) { // 判断是否包含track id
-//                    continue;
-//                }
-//
-//                QueryStringDecoder decoder = new QueryStringDecoder(request);
-//                if (decoder.parameters().get(TRACKID) == null) {
-//                    continue;
-//                }
-//
-//                Map<String, Object> source = new HashMap<>();
-//
-//                source.putAll(message.getAttribute());
-//                source.put("method", message.getHttpMessage().getMethod());
-//                source.put("version", message.getHttpMessage().getProtocolVersion());
-//                message.getHttpMessage().headers().entries().forEach(entry -> {
-//                    source.put(entry.getKey(), entry.getValue());
-//                });
-//
-//                decoder.parameters().forEach((k, v) -> {
-//                    if (v.isEmpty())
-//                        source.put(k, "");
-//                    else
-//                        source.put(k, v.get(0));
-//                });
 
                     IndexRequestBuilder builder = client.prepareIndex();
 
@@ -107,10 +60,10 @@ public class EsForward implements ElasticRequest, Constants {
 
                                 Matcher matcher2 = Pattern.compile(VISITOR_IDENTIFIER_REG).matcher(source);
                                 if (matcher2.find()) {
-                                    String vid = matcher2.group().replace("\"vid\":\"", "");
-                                    if (vidExists(vid)) {
-                                        builder.setIndex("visitor-" + localDate.toString());
-                                        EsOperator.push(builder.request());
+                                    String tt = matcher2.group().replace("\"tt\":\"", "");
+                                    if (visitorExists("access-2015-03-23", trackId, tt)) {
+                                        builder.setIndex("access-" + localDate.toString());
+                                        requestQueue.add(builder.request());
                                     } else {
                                         builder.setIndex("access-" + localDate.toString());
 //                                        bulkRequestBuilder.add(builder.request());
@@ -127,10 +80,6 @@ public class EsForward implements ElasticRequest, Constants {
                         JRedisPools.returnJedis(jedis);
                     }
 
-//                    if (bulkRequestBuilder.numberOfActions() == 500) {
-//                        bulkRequestBuilder.get();
-//                        bulkRequestBuilder = client.prepareBulk();
-//                    }
                 }
             });
         }
@@ -159,7 +108,13 @@ public class EsForward implements ElasticRequest, Constants {
 
     @Override
     public TransportClient getEsClient() {
-        return EsPools.getEsClient();
+        if (client == null) {
+            synchronized (this) {
+                if (client == null)
+                    return EsPools.getEsClient();
+            }
+        }
+        return client;
     }
 
 }

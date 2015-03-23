@@ -21,6 +21,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> implements Constants {
 
     private static final String TRACKID = "t";
+    private static final long COOKIE_EXPIRE = 31536000000l;
 
     private final StringBuffer responseContent = new StringBuffer();
 
@@ -151,11 +152,15 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
             if (!hasVid) {
                 vid = UUID.randomUUID().toString().replaceAll("-", "");
-                cookies.add(new DefaultCookie(VISITOR_IDENTIFIER, vid));
+                Cookie _cookie = new DefaultCookie(VISITOR_IDENTIFIER, vid);
+                _cookie.setMaxAge(COOKIE_EXPIRE);
+                cookies.add(_cookie);
             }
         } else {
             vid = UUID.randomUUID().toString().replaceAll("-", "");
-            cookies.add(new DefaultCookie(VISITOR_IDENTIFIER, vid));
+            Cookie _cookie = new DefaultCookie(VISITOR_IDENTIFIER, vid);
+            _cookie.setMaxAge(COOKIE_EXPIRE);
+            cookies.add(_cookie);
         }
 
         return cookies;

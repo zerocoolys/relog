@@ -1,5 +1,6 @@
 package com.ss.es;
 
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
@@ -10,7 +11,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 
 /**
  * Created by baizz on 2015-3-23.
@@ -19,7 +20,7 @@ public interface ElasticRequest {
 
     public static final String _ID = "_id";
 
-    public static final String VID = "vid"; // visitor_identifier
+    public static final String TT = "tt";   // UV
 
 
     TransportClient getEsClient();
@@ -61,10 +62,14 @@ public interface ElasticRequest {
         return getEsClient().prepareBulk();
     }
 
-    default boolean vidExists(String vid) {
-        SearchRequestBuilder searchRequestBuilder = getSearchRequestBuilder();
-        TermQueryBuilder termQueryBuilder = new TermQueryBuilder(VID, vid);
-        SearchResponse response = searchRequestBuilder.setQuery(termQueryBuilder).get();
+    default boolean visitorExists(String index, String type, String tt) {
+        IndicesExistsRequest request = new IndicesExistsRequest(index);
+        boolean isExists = getEsClient().admin().indices().exists(request).actionGet().isExists();
+        if (!isExists)
+            return false;
+
+        SearchRequestBuilder searchRequestBuilder = getSearchRequestBuilder().setIndices(index).setTypes(type);
+        SearchResponse response = searchRequestBuilder.setQuery(QueryBuilders.termQuery(TT, tt)).get();
         long hits = response.getHits().getTotalHits();
         return hits == 1;
     }
