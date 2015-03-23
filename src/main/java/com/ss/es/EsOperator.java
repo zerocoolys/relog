@@ -1,11 +1,9 @@
 package com.ss.es;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.transport.TransportClient;
 
-import java.time.LocalDate;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 
@@ -14,46 +12,49 @@ import java.util.concurrent.Executors;
  * <p/>
  * elasticsearch数据更新操作类
  */
-public class EsOperator {
+public class EsOperator implements ElasticRequest {
 
-    private static final ConcurrentLinkedQueue<Map<String, Object>> requestQueue = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
+
+    private final TransportClient client;
 
 
     public EsOperator() {
+        this.client = getEsClient();
         init();
     }
 
 
-    public static void push(Map<String, Object> requestMessage) {
-        requestQueue.offer(requestMessage);
+    public static void push(IndexRequest request) {
+        requestQueue.offer(request);
     }
 
     private void init() {
-        TransportClient client = EsPools.getEsClient();
+//        TransportClient client = EsPools.getEsClient();
         Executors.newSingleThreadExecutor().execute(() -> {
-//            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
-//            while (true) {
-//                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
-//                    bulkRequestBuilder.get();
-//                    bulkRequestBuilder = client.prepareBulk();
-//                } else if (!requestQueue.isEmpty()) {
-//                    Map<String, Object> source = requestQueue.poll();
-//                    IndexRequestBuilder builder = client.prepareIndex();
-//                    LocalDate localDate = LocalDate.now();
-//                    builder.setIndex("visitor-" + localDate.getYear() + "-" + localDate.getMonthValue() + "-" + localDate.getDayOfMonth());
-//                    builder.setType(source.get("t").toString());
-//                    builder.setSource(source);
-//                    bulkRequestBuilder.add(builder.request());
-//
-//                    if (bulkRequestBuilder.numberOfActions() == 1_000) {
-//                        bulkRequestBuilder.get();
-//                        bulkRequestBuilder = client.prepareBulk();
-//                    }
-//
-//                }
-//
-//            }
+            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+            while (true) {
+                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                } else if (!requestQueue.isEmpty()) {
+                    IndexRequest request = requestQueue.poll();
+                    bulkRequestBuilder.add(request);
+
+                    if (bulkRequestBuilder.numberOfActions() == 1_000) {
+                        bulkRequestBuilder.get();
+                        bulkRequestBuilder = client.prepareBulk();
+                    }
+
+                }
+
+            }
         });
 
+    }
+
+    @Override
+    public TransportClient getEsClient() {
+        return EsPools.getEsClient();
     }
 }
