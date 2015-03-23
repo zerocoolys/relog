@@ -20,9 +20,11 @@ import java.util.regex.Pattern;
  */
 public class EsForward implements ElasticRequest, Constants {
 
-    // vid -> 访客唯一标识符； tt -> UV
+    // t -> TrackId; vid -> 访客唯一标识符； tt -> UV
     private static final String TRACKID_REG = "\"t\":\"\\d+";
     private static final String VISITOR_IDENTIFIER_REG = "\"tt\":\"[0-9a-zA-Z]+";
+    private static final String ACCESS_PREFIX = "access-";
+    private static final String VISITOR_PREFIX = "visitor-";
 
     private final TransportClient client;
     private final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>(); // PV
@@ -61,15 +63,14 @@ public class EsForward implements ElasticRequest, Constants {
                                 Matcher matcher2 = Pattern.compile(VISITOR_IDENTIFIER_REG).matcher(source);
                                 if (matcher2.find()) {
                                     String tt = matcher2.group().replace("\"tt\":\"", "");
-                                    if (visitorExists("access-2015-03-23", trackId, tt)) {
-                                        builder.setIndex("access-" + localDate.toString());
+                                    if (visitorExists(VISITOR_PREFIX + localDate.toString(), trackId, tt)) {
+                                        builder.setIndex(ACCESS_PREFIX + localDate.toString());
                                         requestQueue.add(builder.request());
                                     } else {
-                                        builder.setIndex("access-" + localDate.toString());
-//                                        bulkRequestBuilder.add(builder.request());
+                                        builder.setIndex(ACCESS_PREFIX + localDate.toString());
                                         requestQueue.add(builder.request());
 
-                                        builder = getIndexRequestBuilder("visitor-" + localDate.toString(), trackId);
+                                        builder = getIndexRequestBuilder(VISITOR_PREFIX + localDate.toString(), trackId);
                                         builder.setSource(source);
                                         EsOperator.push(builder.request());
                                     }
