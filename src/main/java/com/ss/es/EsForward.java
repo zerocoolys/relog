@@ -18,28 +18,21 @@ import java.util.regex.Pattern;
 /**
  * Created by yousheng on 15/3/16.
  */
-public class EsForward implements Constants {
+public class EsForward implements ElasticRequest, Constants {
 
 //    private static final LinkedBlockingQueue<MessageObject> messages = new LinkedBlockingQueue<>();
 //    private static final String TRACKID = "t";
 //    private static TransportClient client = null;
-//    private static Map<String, String> esMap = new HashMap<>();
 
     private static final String TRACKID_REG = "\"t\":\"\\d+";
+    private static final String VISITOR_IDENTIFIER_REG = "\"vid\":\"[0-9a-zA-Z]+";
 
+    private final TransportClient client;
     private final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
 
-//    static {
-//        if (client == null) {
-//            synchronized (EsForward.class) {
-//                if (client == null) {
-//                    client = initEsClient();
-//                }
-//            }
-//        }
-//    }
 
     public EsForward() {
+        this.client = getEsClient();
         init();
         handleRequest();
     }
@@ -56,7 +49,7 @@ public class EsForward implements Constants {
 
         int num = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(num);
-        TransportClient client = EsPools.getEsClient();
+//        TransportClient client = EsPools.getEsClient();
         for (int i = 0; i < num; i++) {
             executor.execute(() -> {
 //                BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -104,17 +97,30 @@ public class EsForward implements Constants {
                         jedis = JRedisPools.getConnection();
                         String source = jedis.rpop(ACCESS_MESSAGE);
                         if (source != null) {
-                            Matcher matcher = Pattern.compile(TRACKID_REG).matcher(source);
-                            if (matcher.find()) {
-                                String trackId = matcher.group().replace("\"t\":\"", "");
+                            Matcher matcher1 = Pattern.compile(TRACKID_REG).matcher(source);
+                            if (matcher1.find()) {
+                                String trackId = matcher1.group().replace("\"t\":\"", "");
 
                                 LocalDate localDate = LocalDate.now();
-                                builder.setIndex("access-" + localDate.getYear() + "-" + localDate.getMonthValue() + "-" + localDate.getDayOfMonth());
                                 builder.setType(trackId);
                                 builder.setSource(source);
 
-//                                bulkRequestBuilder.add(builder.request());
-                                requestQueue.add(builder.request());
+                                Matcher matcher2 = Pattern.compile(VISITOR_IDENTIFIER_REG).matcher(source);
+                                if (matcher2.find()) {
+                                    String vid = matcher2.group().replace("\"vid\":\"", "");
+                                    if (vidExists(vid)) {
+                                        builder.setIndex("visitor-" + localDate.toString());
+                                        EsOperator.push(builder.request());
+                                    } else {
+                                        builder.setIndex("access-" + localDate.toString());
+//                                        bulkRequestBuilder.add(builder.request());
+                                        requestQueue.add(builder.request());
+
+                                        builder = getIndexRequestBuilder("visitor-" + localDate.toString(), trackId);
+                                        builder.setSource(source);
+                                        EsOperator.push(builder.request());
+                                    }
+                                }
                             }
                         }
                     } finally {
@@ -151,34 +157,9 @@ public class EsForward implements Constants {
         });
     }
 
-//    private static TransportClient initEsClient() {
-//        TransportClient client = null;
-//        try {
-//            ResourceBundle bundle = ResourceBundle.getBundle("elasticsearch");
-//            String[] hosts = bundle.getString("es.host").split(",");
-//            List<InetSocketTransportAddress> addressList = new ArrayList<>();
-//            for (String host : hosts) {
-//                String[] arr = host.split(":");
-//                if (arr.length == 1)
-//                    addressList.add(new InetSocketTransportAddress(arr[0], 19300));
-//                else if (arr.length == 2)
-//                    addressList.add(new InetSocketTransportAddress(arr[0], Integer.valueOf(arr[1])));
-//
-//            }
-//            String clusterName = bundle.getString("es.cluster");
-//
-//            //设置client.transport.sniff为true来使客户端去嗅探整个集群的状态, 把集群中其它机器的ip地址加到客户端中
-//            Settings settings = ImmutableSettings.settingsBuilder().put(esMap).put("cluster.name", clusterName).put("client.transport.sniff", true).build();
-//            Class<?> clazz = Class.forName(TransportClient.class.getName());
-//            Constructor<?> constructor = clazz.getDeclaredConstructor(Settings.class);
-//            constructor.setAccessible(true);
-//            client = (TransportClient) constructor.newInstance(settings);
-//            client.addTransportAddresses(addressList.toArray(new InetSocketTransportAddress[addressList.size()]));
-//        } catch (final Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        return client;
-//    }
+    @Override
+    public TransportClient getEsClient() {
+        return EsPools.getEsClient();
+    }
 
 }

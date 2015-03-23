@@ -2,7 +2,6 @@ package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
 import com.ss.config.JRedisPools;
-import com.ss.es.EsOperator;
 import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -90,8 +89,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                     }
 
                     writeResponse(ctx.channel(), cookies);
-
-                    EsOperator.push(source);
                 }
 
             }
@@ -124,33 +121,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
         cookies.forEach(cookie -> response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie)));
 
-//        Set<Cookie> cookies;
-//        String value = request.headers().get(COOKIE);
-//        if (value == null) {
-//            cookies = Collections.emptySet();
-//        } else {
-//            cookies = CookieDecoder.decode(value);
-//        }
-//
-//        boolean hasVid = false;
-//        String vid;
-//        if (!cookies.isEmpty()) {
-//            // Reset the cookies if necessary.
-//            for (Cookie cookie : cookies) {
-//                if (VISITOR_IDENTIFIER.equals(cookie.getName()))
-//                    hasVid = true;
-//                response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie));
-//            }
-//
-//            if (!hasVid) {
-//                vid = UUID.randomUUID().toString().replaceAll("-", "");
-//                response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(new DefaultCookie(VISITOR_IDENTIFIER, vid)));
-//            }
-//        } else {
-//            // generate vid and add to cookie
-//            vid = UUID.randomUUID().toString().replaceAll("-", "");
-//            response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(new DefaultCookie(VISITOR_IDENTIFIER, vid)));
-//        }
         // Write the response.
         ChannelFuture future = channel.writeAndFlush(response);
         // Close the connection after the write operation is done if necessary.
