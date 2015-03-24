@@ -77,7 +77,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                             else
                                 source.put(k, v.get(0));
                         });
-                        source.remove("Refer");
+                        source.remove("Referer");
 
                         cookies = handleCookies(req);
                         for (Cookie cookie : cookies) {
