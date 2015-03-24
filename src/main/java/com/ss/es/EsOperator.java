@@ -9,12 +9,10 @@ import java.util.concurrent.Executors;
 
 /**
  * Created by baizz on 2015-3-20.
- * <p/>
- * elasticsearch数据更新操作类
  */
 public class EsOperator implements ElasticRequest {
 
-    private static final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();  // UV
 
     private final TransportClient client;
 
@@ -30,20 +28,19 @@ public class EsOperator implements ElasticRequest {
     }
 
     private void init() {
-//        TransportClient client = EsPools.getEsClient();
         Executors.newSingleThreadExecutor().execute(() -> {
-            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+            BulkRequestBuilder bulkRequestBuilder = getBulkRequestBuilder();
             while (true) {
                 if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
                     bulkRequestBuilder.get();
-                    bulkRequestBuilder = client.prepareBulk();
+                    bulkRequestBuilder = getBulkRequestBuilder();
                 } else if (!requestQueue.isEmpty()) {
                     IndexRequest request = requestQueue.poll();
                     bulkRequestBuilder.add(request);
 
                     if (bulkRequestBuilder.numberOfActions() == 1_000) {
                         bulkRequestBuilder.get();
-                        bulkRequestBuilder = client.prepareBulk();
+                        bulkRequestBuilder = getBulkRequestBuilder();
                     }
 
                 }
@@ -55,6 +52,12 @@ public class EsOperator implements ElasticRequest {
 
     @Override
     public TransportClient getEsClient() {
-        return EsPools.getEsClient();
+        if (client == null) {
+            synchronized (this) {
+                if (client == null)
+                    return EsPools.getEsClient();
+            }
+        }
+        return client;
     }
 }

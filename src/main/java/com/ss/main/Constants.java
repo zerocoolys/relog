@@ -15,7 +15,11 @@ public interface Constants {
     public static final String VERSION = "version";
     public static final String CITY = "city";
     public static final String UNIX_TIME = "utime";
+    public static final String T = "t";         // trackId
+    public static final String TT = "tt";       // UV标识符
+    public static final String VID = "vid";     // 访客唯一标识码
+    public static final String RF = "rf";
+    public static final String SE = "se";
+    public static final String KW = "kw";
 
-    // statistics
-    public static final String VISITOR_IDENTIFIER = "vid";     // 访客标识码
 }
