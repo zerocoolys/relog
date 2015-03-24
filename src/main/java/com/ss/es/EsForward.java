@@ -1,14 +1,17 @@
 package com.ss.es;
 
+import com.alibaba.fastjson.JSON;
 import com.ss.config.JRedisPools;
-import com.ss.main.Constants;
+import com.ss.main.SearchEngineParser;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import redis.clients.jedis.Jedis;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,11 +21,11 @@ import java.util.regex.Pattern;
 /**
  * Created by yousheng on 15/3/16.
  */
-public class EsForward implements ElasticRequest, Constants {
+public class EsForward implements ElasticRequest {
 
     // t -> TrackId; vid -> 访客唯一标识符； tt -> UV
-    private static final String TRACKID_REG = "\"t\":\"\\d+";
-    private static final String VISITOR_IDENTIFIER_REG = "\"tt\":\"[0-9a-zA-Z]+";
+//    private static final String TRACKID_REG = "\"t\":\"\\d+";
+//    private static final String VISITOR_IDENTIFIER_REG = "\"tt\":\"[0-9a-zA-Z]+";
     private static final String ACCESS_PREFIX = "access-";
     private static final String VISITOR_PREFIX = "visitor-";
 
@@ -52,30 +55,63 @@ public class EsForward implements ElasticRequest, Constants {
                         jedis = JRedisPools.getConnection();
                         String source = jedis.rpop(ACCESS_MESSAGE);
                         if (source != null) {
-                            Matcher matcher1 = Pattern.compile(TRACKID_REG).matcher(source);
-                            if (matcher1.find()) {
-                                String trackId = matcher1.group().replace("\"t\":\"", "");
-
-                                LocalDate localDate = LocalDate.now();
-                                builder.setType(trackId);
-                                builder.setSource(source);
-
-                                Matcher matcher2 = Pattern.compile(VISITOR_IDENTIFIER_REG).matcher(source);
-                                if (matcher2.find()) {
-                                    String tt = matcher2.group().replace("\"tt\":\"", "");
-                                    if (visitorExists(VISITOR_PREFIX + localDate.toString(), trackId, tt)) {
-                                        builder.setIndex(ACCESS_PREFIX + localDate.toString());
-                                        requestQueue.add(builder.request());
-                                    } else {
-                                        builder.setIndex(ACCESS_PREFIX + localDate.toString());
-                                        requestQueue.add(builder.request());
-
-                                        builder = getIndexRequestBuilder(VISITOR_PREFIX + localDate.toString(), trackId);
-                                        builder.setSource(source);
-                                        EsOperator.push(builder.request());
-                                    }
+                            Map<String, Object> mapSource = (Map<String, Object>) JSON.parse(source);
+                            String trackId = mapSource.get(T).toString();
+                            String tt = mapSource.get(TT).toString();
+                            try {
+                                String refer = mapSource.get(RF).toString();
+                                if ("-".equals(refer)) {
+                                    mapSource.put(SE, "");
+                                    mapSource.put(KW, "");
+                                } else {
+                                    String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
+                                    mapSource.put(SE, sk[0]);
+                                    mapSource.put(KW, sk[1]);
                                 }
+                            } catch (UnsupportedEncodingException e) {
+                                e.printStackTrace();
                             }
+
+                            LocalDate localDate = LocalDate.now();
+                            builder.setType(trackId);
+                            builder.setSource(mapSource);
+
+                            if (visitorExists(VISITOR_PREFIX + localDate.toString(), trackId, tt)) {
+                                builder.setIndex(ACCESS_PREFIX + localDate.toString());
+                                requestQueue.add(builder.request());
+                            } else {
+                                builder.setIndex(ACCESS_PREFIX + localDate.toString());
+                                requestQueue.add(builder.request());
+
+                                builder = getIndexRequestBuilder(VISITOR_PREFIX + localDate.toString(), trackId);
+                                builder.setSource(source);
+                                EsOperator.push(builder.request());
+                            }
+
+//                            Matcher matcher1 = Pattern.compile(TRACKID_REG).matcher(source);
+//                            if (matcher1.find()) {
+//                                String trackId = matcher1.group().replace("\"t\":\"", "");
+//
+//                                LocalDate localDate = LocalDate.now();
+//                                builder.setType(trackId);
+//                                builder.setSource(source);
+//
+//                                Matcher matcher2 = Pattern.compile(VISITOR_IDENTIFIER_REG).matcher(source);
+//                                if (matcher2.find()) {
+//                                    String tt = matcher2.group().replace("\"tt\":\"", "");
+//                                    if (visitorExists(VISITOR_PREFIX + localDate.toString(), trackId, tt)) {
+//                                        builder.setIndex(ACCESS_PREFIX + localDate.toString());
+//                                        requestQueue.add(builder.request());
+//                                    } else {
+//                                        builder.setIndex(ACCESS_PREFIX + localDate.toString());
+//                                        requestQueue.add(builder.request());
+//
+//                                        builder = getIndexRequestBuilder(VISITOR_PREFIX + localDate.toString(), trackId);
+//                                        builder.setSource(source);
+//                                        EsOperator.push(builder.request());
+//                                    }
+//                                }
+//                            }
                         }
                     } finally {
                         JRedisPools.returnJedis(jedis);

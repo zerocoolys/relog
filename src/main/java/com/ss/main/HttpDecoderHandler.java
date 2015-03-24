@@ -10,7 +10,11 @@ import io.netty.util.CharsetUtil;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -20,8 +24,8 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
  */
 public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> implements Constants {
 
-    private static final String TRACKID = "t";
-    private static final long COOKIE_EXPIRE = 31536000000l;
+//    private static final String TRACKID = "t";
+//    private static final long COOKIE_EXPIRE = 31536000000l;
 
     private final StringBuffer responseContent = new StringBuffer();
 
@@ -41,7 +45,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
             if (req.getDecoderResult().isSuccess() && req.getUri().contains("?t=")) {
                 QueryStringDecoder decoder = new QueryStringDecoder(req.getUri());
 
-                if (decoder.parameters().get(TRACKID) != null) {
+                if (decoder.parameters().get(T) != null) {
                     Map<String, Object> source = new HashMap<>();
                     Set<Cookie> cookies = null;
                     Jedis jedis = null;
@@ -73,11 +77,12 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                             else
                                 source.put(k, v.get(0));
                         });
+                        source.remove("Refer");
 
                         cookies = handleCookies(req);
                         for (Cookie cookie : cookies) {
-                            if (VISITOR_IDENTIFIER.equals(cookie.getName())) {
-                                source.put(VISITOR_IDENTIFIER, cookie.getValue());
+                            if (VID.equals(cookie.getName())) {
+                                source.put(VID, cookie.getValue());
                                 break;
                             }
                         }
@@ -134,34 +139,34 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
         Set<Cookie> cookies;
         String value = request.headers().get(COOKIE);
         if (value == null) {
-//            cookies = Collections.emptySet();
-            cookies = new HashSet<>();
+            cookies = Collections.emptySet();
+//            cookies = new HashSet<>();
         } else {
             cookies = CookieDecoder.decode(value);
         }
 
-        boolean hasVid = false;
-        String vid;
-        if (!cookies.isEmpty()) {
-            for (Cookie cookie : cookies) {
-                if (VISITOR_IDENTIFIER.equals(cookie.getName())) {
-                    hasVid = true;
-                    break;
-                }
-            }
-
-            if (!hasVid) {
-                vid = UUID.randomUUID().toString().replaceAll("-", "");
-                Cookie _cookie = new DefaultCookie(VISITOR_IDENTIFIER, vid);
-                _cookie.setMaxAge(COOKIE_EXPIRE);
-                cookies.add(_cookie);
-            }
-        } else {
-            vid = UUID.randomUUID().toString().replaceAll("-", "");
-            Cookie _cookie = new DefaultCookie(VISITOR_IDENTIFIER, vid);
-            _cookie.setMaxAge(COOKIE_EXPIRE);
-            cookies.add(_cookie);
-        }
+//        boolean hasVid = false;
+//        String vid;
+//        if (!cookies.isEmpty()) {
+//            for (Cookie cookie : cookies) {
+//                if (VID.equals(cookie.getName())) {
+//                    hasVid = true;
+//                    break;
+//                }
+//            }
+//
+//            if (!hasVid) {
+//                vid = UUID.randomUUID().toString().replaceAll("-", "");
+//                Cookie _cookie = new DefaultCookie(VID, vid);
+//                _cookie.setMaxAge(COOKIE_EXPIRE);
+//                cookies.add(_cookie);
+//            }
+//        } else {
+//            vid = UUID.randomUUID().toString().replaceAll("-", "");
+//            Cookie _cookie = new DefaultCookie(VID, vid);
+//            _cookie.setMaxAge(COOKIE_EXPIRE);
+//            cookies.add(_cookie);
+//        }
 
         return cookies;
     }

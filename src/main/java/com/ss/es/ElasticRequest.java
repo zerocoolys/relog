@@ -1,5 +1,6 @@
 package com.ss.es;
 
+import com.ss.main.Constants;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.count.CountRequestBuilder;
@@ -16,12 +17,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 /**
  * Created by baizz on 2015-3-23.
  */
-public interface ElasticRequest {
-
-    public static final String _ID = "_id";
-
-    public static final String TT = "tt";   // UV
-
+public interface ElasticRequest extends Constants {
 
     TransportClient getEsClient();
 
