@@ -13,11 +13,22 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by baizz on 2015-3-23.
  */
 public interface ElasticRequest extends Constants {
+
+    String ID = "_id";
+    String INDEX = "index";
+    String TYPE = "_type";
+
 
     TransportClient getEsClient();
 
@@ -58,15 +69,37 @@ public interface ElasticRequest extends Constants {
         return getEsClient().prepareBulk();
     }
 
-    default boolean visitorExists(String index, String type, String tt) {
+    default Map<String, Object> visitorExists(String index, String type, String tt) {
         IndicesExistsRequest request = new IndicesExistsRequest(index);
         boolean isExists = getEsClient().admin().indices().exists(request).actionGet().isExists();
         if (!isExists)
-            return false;
+            return Collections.emptyMap();
 
         SearchRequestBuilder searchRequestBuilder = getSearchRequestBuilder().setIndices(index).setTypes(type);
         SearchResponse response = searchRequestBuilder.setQuery(QueryBuilders.termQuery(TT, tt)).get();
-        long hits = response.getHits().getTotalHits();
-        return hits == 1;
+        SearchHits hits = response.getHits();
+
+        if (hits.getTotalHits() == 1) {
+            SearchHit hit = hits.getAt(0);
+            Map<String, Object> doc = new HashMap<>();
+            doc.put(ID, hit.getId());
+            doc.put(INDEX, hit.getIndex());
+            doc.put(TYPE, hit.getType());
+            hit.getSource().forEach((k, v) -> {
+                switch (k) {
+                    case CURR_ADDRESS:
+                        doc.put(k, v);
+                        break;
+                    case UNIX_TIME:
+                        doc.put(k, v);
+                        break;
+                    default:
+                        break;
+                }
+            });
+            return doc;
+        } else {
+            return Collections.emptyMap();
+        }
     }
 }
