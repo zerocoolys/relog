@@ -47,7 +47,7 @@ public class SearchEngineParser implements Constants {
         return sk;
     }
 
-    public static enum TypeEnum {
+    public enum TypeEnum {
         BAIDU("baidu"),
         SOUGOU("sougou"),
         HAOSOU("haosou"),
@@ -55,7 +55,7 @@ public class SearchEngineParser implements Constants {
 
         private String name;
 
-        private TypeEnum(String name) {
+        TypeEnum(String name) {
             this.name = name;
         }
 

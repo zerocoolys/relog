@@ -7,11 +7,15 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.collect.Sets;
 import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,8 +65,8 @@ public class EsForward implements ElasticRequest {
                             try {
                                 String refer = mapSource.get(RF).toString();
                                 if ("-".equals(refer)) {
-                                    mapSource.put(SE, "");
-                                    mapSource.put(KW, "");
+                                    mapSource.put(SE, null);
+                                    mapSource.put(KW, null);
                                 } else {
                                     String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
                                     mapSource.put(SE, sk[0]);
@@ -76,16 +80,34 @@ public class EsForward implements ElasticRequest {
                             builder.setType(trackId);
                             builder.setSource(mapSource);
 
-                            if (visitorExists(VISITOR_PREFIX + localDate.toString(), trackId, tt)) {
+                            Map<String, Object> doc = visitorExists(VISITOR_PREFIX + localDate.toString(), trackId, tt);
+                            if (doc.isEmpty()) {
                                 builder.setIndex(ACCESS_PREFIX + localDate.toString());
                                 requestQueue.add(builder.request());
+
+                                builder = getIndexRequestBuilder(VISITOR_PREFIX + localDate.toString(), trackId);
+
+                                Set<String> currAddress = Sets.newHashSet(mapSource.remove(CURR_ADDRESS).toString());
+                                Set<Long> utime = Sets.newHashSet(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));
+                                mapSource.put(CURR_ADDRESS, currAddress.toArray(new String[currAddress.size()]));
+                                mapSource.put(UNIX_TIME, utime.toArray(new Long[utime.size()]));
+
+                                builder.setSource(mapSource);
+                                EsOperator.pushIndexRequest(builder.request());
                             } else {
                                 builder.setIndex(ACCESS_PREFIX + localDate.toString());
                                 requestQueue.add(builder.request());
 
                                 builder = getIndexRequestBuilder(VISITOR_PREFIX + localDate.toString(), trackId);
-                                builder.setSource(source);
-                                EsOperator.push(builder.request());
+
+                                List<String> currAddress = (ArrayList) doc.get(CURR_ADDRESS);
+                                List<Long> utime = (ArrayList) doc.get(UNIX_TIME);
+
+                                currAddress.add(mapSource.remove(CURR_ADDRESS).toString());
+                                utime.add(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));
+                                mapSource.put(CURR_ADDRESS, currAddress.toArray(new String[currAddress.size()]));
+                                mapSource.put(UNIX_TIME, utime.toArray(new Long[utime.size()]));
+                                EsOperator.pushUpdateRequest(doc);
                             }
 
 //                            Matcher matcher1 = Pattern.compile(TRACKID_REG).matcher(source);
