@@ -65,8 +65,8 @@ public class EsForward implements ElasticRequest {
                             try {
                                 String refer = mapSource.get(RF).toString();
                                 if ("-".equals(refer)) {
-                                    mapSource.put(SE, null);
-                                    mapSource.put(KW, null);
+                                    mapSource.put(SE, "");
+                                    mapSource.put(KW, "");
                                 } else {
                                     String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
                                     mapSource.put(SE, sk[0]);
@@ -155,7 +155,7 @@ public class EsForward implements ElasticRequest {
                     bulkRequestBuilder = client.prepareBulk();
                 } else if (!requestQueue.isEmpty()) {
                     bulkRequestBuilder.add(requestQueue.poll());
-                    if (bulkRequestBuilder.numberOfActions() == 1_000) {
+                    if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                         bulkRequestBuilder.get();
                         bulkRequestBuilder = client.prepareBulk();
                     }
