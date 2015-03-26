@@ -47,7 +47,7 @@ public class EsOperator implements ElasticRequest {
                     IndexRequest request = requestQueue.poll();
                     bulkRequestBuilder.add(request);
 
-                    if (bulkRequestBuilder.numberOfActions() == 1_000) {
+                    if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                         bulkRequestBuilder.get();
                         bulkRequestBuilder = getBulkRequestBuilder();
                     }
@@ -80,7 +80,7 @@ public class EsOperator implements ElasticRequest {
                         e.printStackTrace();
                     }
 
-                    if (bulkRequestBuilder.numberOfActions() == 1_000) {
+                    if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                         bulkRequestBuilder.get();
                         bulkRequestBuilder = getBulkRequestBuilder();
                     }
