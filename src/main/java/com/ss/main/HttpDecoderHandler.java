@@ -1,7 +1,7 @@
 package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
-import com.ss.config.JRedisPools;
+import com.ss.redis.JRedisPools;
 import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
