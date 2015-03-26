@@ -5,8 +5,9 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
-import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,39 +16,49 @@ import java.util.Map;
 public class EsPools {
 
     private static String host = null;
-    private static int port;
     private static String clusterName = null;
     private static int bulkRequestNumber;
 
-    private static TransportClient esClient = null;
+    private static List<TransportClient> clients = new ArrayList<>();
     private static Map<String, String> esMap = new HashMap<>();
 
 
     private EsPools() {
     }
 
-    //retrieve an es client instance
-    public static TransportClient getEsClient() {
-        if (esClient == null) {
+    public static List<TransportClient> getEsClient() {
+        if (clients.isEmpty()) {
             synchronized (EsPools.class) {
-                if (esClient == null)
-                    esClient = initEsClient();
+                if (clients.isEmpty()) {
+                    String[] hosts = host.split(",");
+                    String[] clusterNames = clusterName.split(",");
+                    for (int i = 0, l = hosts.length; i < l; i++)
+                        clients.add(initEsClient(hosts[i], clusterNames[i]));
+                }
             }
         }
 
-        return esClient;
+        return clients;
     }
 
-    private static TransportClient initEsClient() {
+    private static TransportClient initEsClient(String host, String clusterName) {
         TransportClient client = null;
         try {
+            String[] arr = host.split(":");
+
             // 设置client.transport.sniff为true来使客户端去嗅探整个集群的状态, 把集群中其它机器的ip地址加到客户端中
-            Settings settings = ImmutableSettings.settingsBuilder().put(esMap).put("cluster.name", getClusterName()).put("client.transport.sniff", true).build();
-            Class<?> clazz = Class.forName(TransportClient.class.getName());
-            Constructor<?> constructor = clazz.getDeclaredConstructor(Settings.class);
-            constructor.setAccessible(true);
-            client = (TransportClient) constructor.newInstance(settings);
-            client.addTransportAddresses(new InetSocketTransportAddress(getHost(), getPort()));
+            Settings settings = ImmutableSettings.settingsBuilder().put(esMap)
+                    .put("cluster.name", clusterName)
+                    .put("client.transport.sniff", true)
+                    .put("client.transport.ignore_cluster_name", true)
+                    .put("client.transport.ping_timeout", "10s")
+                    .put("client.transport.nodes_sampler_interval", "15s").build();
+            client = new TransportClient(settings);
+
+            if (arr.length == 1)
+                client.addTransportAddress(new InetSocketTransportAddress(arr[0], 19300));
+            else if (arr.length == 2)
+                client.addTransportAddress(new InetSocketTransportAddress(arr[0], Integer.parseInt(arr[1])));
         } catch (final Exception e) {
             e.printStackTrace();
         }
@@ -55,24 +66,9 @@ public class EsPools {
         return client;
     }
 
-    public static String getHost() {
-        return host;
-    }
 
     public static void setHost(String host) {
         EsPools.host = host;
-    }
-
-    public static int getPort() {
-        return port;
-    }
-
-    public static void setPort(int port) {
-        EsPools.port = port;
-    }
-
-    public static String getClusterName() {
-        return clusterName;
     }
 
     public static void setClusterName(String clusterName) {

@@ -16,58 +16,60 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  */
 public class EsOperator implements ElasticRequest {
 
-    private static final ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();  // UV
+    private static final ConcurrentLinkedQueue<IndexRequest> insertRequestQueue = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Map<String, Object>> updateRequestQueue = new ConcurrentLinkedQueue<>();
-
     private final TransportClient client;
 
 
-    public EsOperator() {
-        this.client = getEsClient();
-        init();
+    public EsOperator(TransportClient client) {
+        this.client = client;
+        handleInsertRequest();
+        handleUpdateRequest();
     }
 
 
-    public static void pushIndexRequest(IndexRequest request) {
-        requestQueue.offer(request);
+    public void pushIndexRequest(IndexRequest request) {
+        insertRequestQueue.offer(request);
     }
 
-    public static void pushUpdateRequest(Map<String, Object> request) {
+    public void pushUpdateRequest(Map<String, Object> request) {
         updateRequestQueue.offer(request);
     }
 
-    private void init() {
+    private void handleInsertRequest() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            BulkRequestBuilder bulkRequestBuilder = getBulkRequestBuilder();
+            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             while (true) {
-                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                if (insertRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
                     bulkRequestBuilder.get();
-                    bulkRequestBuilder = getBulkRequestBuilder();
-                } else if (!requestQueue.isEmpty()) {
-                    IndexRequest request = requestQueue.poll();
+                    bulkRequestBuilder = client.prepareBulk();
+                } else if (!insertRequestQueue.isEmpty()) {
+                    IndexRequest request = insertRequestQueue.poll();
                     bulkRequestBuilder.add(request);
 
                     if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                         bulkRequestBuilder.get();
-                        bulkRequestBuilder = getBulkRequestBuilder();
+                        bulkRequestBuilder = client.prepareBulk();
                     }
 
                 }
 
             }
         });
+    }
 
+    private void handleUpdateRequest() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            BulkRequestBuilder bulkRequestBuilder = getBulkRequestBuilder();
+            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             while (true) {
                 if (updateRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
                     bulkRequestBuilder.get();
-                    bulkRequestBuilder = getBulkRequestBuilder();
+                    bulkRequestBuilder = client.prepareBulk();
                 } else if (!updateRequestQueue.isEmpty()) {
                     Map<String, Object> requestMap = updateRequestQueue.poll();
 
                     try {
-                        bulkRequestBuilder.add(getUpdateRequestBuilder()
+                        bulkRequestBuilder.add(client.prepareUpdate()
                                 .setIndex(requestMap.get(INDEX).toString())
                                 .setType(requestMap.get(TYPE).toString())
                                 .setId(requestMap.get(ID).toString())
@@ -82,24 +84,13 @@ public class EsOperator implements ElasticRequest {
 
                     if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                         bulkRequestBuilder.get();
-                        bulkRequestBuilder = getBulkRequestBuilder();
+                        bulkRequestBuilder = client.prepareBulk();
                     }
 
                 }
 
             }
         });
-
     }
 
-    @Override
-    public TransportClient getEsClient() {
-        if (client == null) {
-            synchronized (this) {
-                if (client == null)
-                    return EsPools.getEsClient();
-            }
-        }
-        return client;
-    }
 }

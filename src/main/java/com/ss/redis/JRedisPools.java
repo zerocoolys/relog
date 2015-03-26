@@ -1,4 +1,4 @@
-package com.ss.config;
+package com.ss.redis;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
