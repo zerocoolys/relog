@@ -5,18 +5,14 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by baizz on 2015-3-20.
  */
 public class EsPools {
 
-    private static String host = null;
-    private static String clusterName = null;
+    private static String mode = null;
     private static int bulkRequestNumber;
 
     private static List<TransportClient> clients = new ArrayList<>();
@@ -30,10 +26,25 @@ public class EsPools {
         if (clients.isEmpty()) {
             synchronized (EsPools.class) {
                 if (clients.isEmpty()) {
-                    String[] hosts = host.split(",");
-                    String[] clusterNames = clusterName.split(",");
-                    for (int i = 0, l = hosts.length; i < l; i++)
-                        clients.add(initEsClient(hosts[i], clusterNames[i]));
+                    ResourceBundle bundle = null;
+
+                    switch (mode) {
+                        case "dev":
+                            bundle = ResourceBundle.getBundle("esDev");
+                            break;
+                        case "prod":
+                            bundle = ResourceBundle.getBundle("esProd");
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (bundle != null) {
+                        String host = bundle.getString("es.host");
+                        String clusterName = bundle.getString("es.cluster");
+
+                        clients.add(initEsClient(host, clusterName));
+                    }
                 }
             }
         }
@@ -66,13 +77,12 @@ public class EsPools {
         return client;
     }
 
-
-    public static void setHost(String host) {
-        EsPools.host = host;
+    public static String getMode() {
+        return mode;
     }
 
-    public static void setClusterName(String clusterName) {
-        EsPools.clusterName = clusterName;
+    public static void setMode(String mode) {
+        EsPools.mode = mode;
     }
 
     public static int getBulkRequestNumber() {

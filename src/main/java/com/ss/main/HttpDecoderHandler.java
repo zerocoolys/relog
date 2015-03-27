@@ -9,7 +9,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,9 +21,6 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
  * Created by yousheng on 15/3/16.
  */
 public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> implements Constants {
-
-//    private static final String TRACKID = "t";
-//    private static final long COOKIE_EXPIRE = 31536000000l;
 
     private final StringBuffer responseContent = new StringBuffer();
 
@@ -59,14 +55,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         mo.add(VERSION, req.getProtocolVersion().toString());
                         mo.add(UNIX_TIME, System.currentTimeMillis());
 
-                        String remoteIp = remote.split(":")[0];
-                        String city = jedis.hget(IP_AREA_INFO, remoteIp);
-                        if (city == null) {
-                            city = IPParser.getArea(remoteIp);
-                            jedis.hset(IP_AREA_INFO, remoteIp, city);
-                        }
-                        mo.add(CITY, city);
-
                         source.putAll(mo.getAttribute());
                         mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
 
@@ -87,8 +75,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         }
 
                         jedis.lpush(ACCESS_MESSAGE, JSON.toJSONString(source));
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     } finally {
                         JRedisPools.returnJedis(jedis);
                     }

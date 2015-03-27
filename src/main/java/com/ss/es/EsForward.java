@@ -53,13 +53,16 @@ public class EsForward implements ElasticRequest {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                if (mapSource == null)
+                    continue;
+
                 String trackId = mapSource.get(T).toString();
                 String tt = mapSource.get(TT).toString();
                 try {
                     String refer = mapSource.get(RF).toString();
                     if ("-".equals(refer)) {
-                        mapSource.put(SE, "");
-                        mapSource.put(KW, "");
+                        mapSource.put(SE, "-");
+                        mapSource.put(KW, "-");
                     } else {
                         String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
                         mapSource.put(SE, sk[0]);

@@ -1,5 +1,6 @@
 package com.ss.redis;
 
+import com.ss.es.EsPools;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -41,8 +42,16 @@ public class JRedisPools {
                 .getString("redis.pool.testOnBorrow")));
         config.setTestOnReturn(Boolean.valueOf(bundle
                 .getString("redis.pool.testOnReturn")));
-        jedisPool = new JedisPool(config, bundle.getString("redis.hostName"),
-                Integer.valueOf(bundle.getString("redis.port")), Protocol.DEFAULT_TIMEOUT,
+
+        String hostName = bundle.getString("redis.hostName");
+        if ("dev".equals(EsPools.getMode()))
+            hostName = hostName.split(",")[0];
+        else
+            hostName = hostName.split(",")[1];
+
+        jedisPool = new JedisPool(config, hostName,
+                Integer.valueOf(bundle.getString("redis.port")),
+                Protocol.DEFAULT_TIMEOUT,
                 bundle.getString("redis.password"));
     }
 

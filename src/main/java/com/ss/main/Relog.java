@@ -22,18 +22,13 @@ public class Relog {
 
         QuartzManager.startJob();
 
-//        EsPools.setHost("182.92.227.79:19300");
-//        EsPools.setClusterName("es-cluster,elasticsearch");
-//        EsPools.setBulkRequestNumber(1000);
         // initialize elasticsearch
-        EsPools.setHost(args[0]);
-        EsPools.setClusterName(args[1]);
+        EsPools.setMode(args[0]);
+        int port = Integer.parseInt(args[1]);
         EsPools.setBulkRequestNumber(Integer.parseInt(args[2]));
 
         List<EsForward> esForwards = new ArrayList<>();
-        EsPools.getEsClient().forEach(client -> {
-            esForwards.add(new EsForward(client));
-        });
+        EsPools.getEsClient().forEach(client -> esForwards.add(new EsForward(client)));
 
         new RedisWorker(esForwards);
 
@@ -48,7 +43,7 @@ public class Relog {
                 .option(ChannelOption.SO_BACKLOG, 1024);
 
         try {
-            Channel channel = bootstrap.bind(28888).sync().channel();
+            Channel channel = bootstrap.bind(port).sync().channel();
             System.out.println("finished.");
 
             channel.closeFuture().sync();
@@ -58,7 +53,6 @@ public class Relog {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-
 
     }
 }

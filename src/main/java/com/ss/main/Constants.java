@@ -13,7 +13,9 @@ public interface Constants {
     String REMOTE = "remote";
     String METHOD = "method";
     String VERSION = "version";
+    String REGION = "region";
     String CITY = "city";
+    String ISP = "isp";
     String CURR_ADDRESS = "loc";
     String UNIX_TIME = "utime";
     String T = "t";         // trackId

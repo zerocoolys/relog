@@ -44,6 +44,8 @@ public class SearchEngineParser implements Constants {
             return sk;
         }
 
+        sk[0] = "-";
+        sk[1] = "-";
         return sk;
     }
 
