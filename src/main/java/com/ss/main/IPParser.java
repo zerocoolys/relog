@@ -1,6 +1,7 @@
 package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,28 +9,35 @@ import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by baizz on 2015-3-18.
  */
 public class IPParser {
 
-    private static final String IP_URL_TEMPLATE = "http://int.dpool.sina.com.cn/iplookup/iplookup.php?format=js&ip=%s";
+    private static final String IP_URL_TEMPLATE = "http://ip.taobao.com/service/getIpInfo.php?ip=%s";
     private static final String IP_CHECK_ADDRESS = "http://city.ip138.com/ip2city.asp";
-    private static final String PREFIX = "var remote_ip_info = ";
-    private static final String CITY = "city";
 
 
-    public static String getArea(String ip) throws IOException {
+    public static Map<String, String> getIpInfo(String ip) throws IOException {
         HttpURLConnection conn = null;
         try {
             URL url = new URL(String.format(IP_URL_TEMPLATE, ip));
             conn = (HttpURLConnection) url.openConnection();
             conn.connect();
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-            String responseStr = reader.lines().findFirst().get().replace(PREFIX, "").replace(";", "");
 
-            return JSON.parseObject(responseStr).getString(CITY);
+            String jsonStr = reader.lines().findFirst().get();
+            JSONObject jsonObject = JSON.parseObject(jsonStr).getJSONObject("data");
+
+            Map<String, String> ipInfoMap = new HashMap<>();
+            ipInfoMap.put("region", jsonObject.getString("region"));
+            ipInfoMap.put("city", jsonObject.getString("city"));
+            ipInfoMap.put("isp", jsonObject.getString("isp"));
+
+            return ipInfoMap;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -91,4 +99,5 @@ public class IPParser {
             return localIp;
         }
     }
+
 }

@@ -20,7 +20,7 @@ public class IndexJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         EsPools.getEsClient().forEach(client -> {
             IndicesAdminClient indicesClient = client.admin().indices();
-            ResourceBundle bundle = ResourceBundle.getBundle("index-prefix");
+            ResourceBundle bundle = ResourceBundle.getBundle("indexPrefix");
             bundle.keySet().forEach(k -> {
                 String index = bundle.getString(k) + LocalDate.now().plusDays(1).toString();
                 if (!indicesClient.exists(new IndicesExistsRequest(index)).actionGet().isExists())

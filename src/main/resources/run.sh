@@ -1,16 +1,16 @@
 #!/bin/bash
-host=127.0.0.1
-cluster_name=elasticsearch
+mode=dev
+port=28888
 bulk=1000
 
-while getopts "h:c:b:" arg
+while getopts "m:p:b:" arg
     do
         case $arg in
-            "h")
-                host=$OPTARG
+            "m")
+                mode=$OPTARG
                 ;;
-            "c")
-                cluster_name=$OPTARG
+            "p")
+                port=$OPTARG
                 ;;
             "b")
                 bulk=$OPTARG
@@ -21,4 +21,4 @@ while getopts "h:c:b:" arg
         esac
     done
 
-java -cp .:./lib/*:./conf com.ss.main.Relog ${host} ${cluster_name} ${bulk}
+java -cp .:./lib/*:./conf com.ss.main.Relog ${mode} ${port} ${bulk}
