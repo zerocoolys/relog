@@ -1,6 +1,6 @@
 #!/bin/bash
 mode=dev
-port=28888
+port=8088
 bulk=1000
 
 while getopts "m:p:b:" arg
