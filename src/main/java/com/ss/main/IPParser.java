@@ -33,9 +33,16 @@ public class IPParser {
             JSONObject jsonObject = JSON.parseObject(jsonStr).getJSONObject("data");
 
             Map<String, String> ipInfoMap = new HashMap<>();
-            ipInfoMap.put("region", jsonObject.getString("region"));
-            ipInfoMap.put("city", jsonObject.getString("city"));
-            ipInfoMap.put("isp", jsonObject.getString("isp"));
+            String region = jsonObject.getString("region");
+            if (region == null || "".equals(region.trim())) {
+                ipInfoMap.put("region", "国外");
+                ipInfoMap.put("city", "-");
+                ipInfoMap.put("isp", "-");
+            } else {
+                ipInfoMap.put("region", region);
+                ipInfoMap.put("city", jsonObject.getString("city"));
+                ipInfoMap.put("isp", jsonObject.getString("isp"));
+            }
 
             return ipInfoMap;
         } catch (IOException e) {
