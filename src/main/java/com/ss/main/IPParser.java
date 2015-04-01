@@ -34,7 +34,7 @@ public class IPParser {
 
             Map<String, String> ipInfoMap = new HashMap<>();
             String region = jsonObject.getString("region");
-            if (region == null || "".equals(region.trim())) {
+            if (region.isEmpty()) {
                 ipInfoMap.put("region", "国外");
                 ipInfoMap.put("city", "-");
                 ipInfoMap.put("isp", "-");
