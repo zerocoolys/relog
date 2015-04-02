@@ -26,20 +26,33 @@ public class SearchEngineParser implements Constants {
     public static String[] getSK(String refer) {
         String[] sk = new String[2];
         QueryStringDecoder decoder = new QueryStringDecoder(refer);
-        if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getName()))) {
-            sk[0] = TypeEnum.BAIDU.getName();
+
+        if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey()))) {
+            sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
             sk[1] = decoder.parameters().get("wd").get(0);
             return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getName()))) {
-            sk[0] = TypeEnum.SOUGOU.getName();
+        } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey()))) {
+            sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
             sk[1] = decoder.parameters().get("query").get(0);
             return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getName()))) {
-            sk[0] = TypeEnum.HAOSOU.getName();
+        } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey()))) {
+            sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
             sk[1] = decoder.parameters().get("q").get(0);
             return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.BING.getName()))) {
-            sk[0] = TypeEnum.BING.getName();
+        } else if (refer.startsWith(bundle.getString(TypeEnum.BING.getKey()))) {
+            sk[0] = TypeEnum.BING.getName(TypeEnum.BING.getKey());
+            sk[1] = decoder.parameters().get("q").get(0);
+            return sk;
+        } else if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey() + "_m"))) {
+            sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
+            sk[1] = decoder.parameters().get("word").get(0);
+            return sk;
+        } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey() + "_m"))) {
+            sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
+            sk[1] = decoder.parameters().get("keyword").get(0);
+            return sk;
+        } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey() + "_m"))) {
+            sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
             sk[1] = decoder.parameters().get("q").get(0);
             return sk;
         }
@@ -50,19 +63,31 @@ public class SearchEngineParser implements Constants {
     }
 
     public enum TypeEnum {
-        BAIDU("baidu"),
-        SOUGOU("sougou"),
-        HAOSOU("haosou"),
-        BING("bing");
+        BAIDU("baidu", "百度"),
+        SOUGOU("sougou", "搜狗"),
+        HAOSOU("haosou", "好搜"),
+        BING("bing", "必应");
 
+        private String key;
         private String name;
 
-        TypeEnum(String name) {
+        TypeEnum(String key, String name) {
+            this.key = key;
             this.name = name;
         }
 
-        public String getName() {
-            return name;
+        public String getKey() {
+            return key;
+        }
+
+        public String getName(String key) {
+            for (TypeEnum typeEnum : TypeEnum.values()) {
+                if (typeEnum.key.equals(key)) {
+                    return typeEnum.name;
+                }
+            }
+            
+            return null;
         }
     }
 }
