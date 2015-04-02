@@ -27,33 +27,39 @@ public class SearchEngineParser implements Constants {
         String[] sk = new String[2];
         QueryStringDecoder decoder = new QueryStringDecoder(refer);
 
-        if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey())) || refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey()).replace("s", ""))) {
-            sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
-            sk[1] = decoder.parameters().get("wd").get(0);
-            return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey()))) {
-            sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
-            sk[1] = decoder.parameters().get("query").get(0);
-            return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey()))) {
-            sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
-            sk[1] = decoder.parameters().get("q").get(0);
-            return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.BING.getKey()))) {
-            sk[0] = TypeEnum.BING.getName(TypeEnum.BING.getKey());
-            sk[1] = decoder.parameters().get("q").get(0);
-            return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey() + "_m"))) {
-            sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
-            sk[1] = decoder.parameters().get("word").get(0);
-            return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey() + "_m"))) {
-            sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
-            sk[1] = decoder.parameters().get("keyword").get(0);
-            return sk;
-        } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey() + "_m"))) {
-            sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
-            sk[1] = decoder.parameters().get("q").get(0);
+        try {
+            if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey())) || refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey()).replace("s", ""))) {
+                sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
+                sk[1] = decoder.parameters().get("wd").get(0);
+                return sk;
+            } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey()))) {
+                sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
+                sk[1] = decoder.parameters().get("query").get(0);
+                return sk;
+            } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey()))) {
+                sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
+                sk[1] = decoder.parameters().get("q").get(0);
+                return sk;
+            } else if (refer.startsWith(bundle.getString(TypeEnum.BING.getKey()))) {
+                sk[0] = TypeEnum.BING.getName(TypeEnum.BING.getKey());
+                sk[1] = decoder.parameters().get("q").get(0);
+                return sk;
+            } else if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey() + "_m"))) {
+                sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
+                sk[1] = decoder.parameters().get("word").get(0);
+                return sk;
+            } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey() + "_m"))) {
+                sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
+                sk[1] = decoder.parameters().get("keyword").get(0);
+                return sk;
+            } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey() + "_m"))) {
+                sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
+                sk[1] = decoder.parameters().get("q").get(0);
+                return sk;
+            }
+        } catch (NullPointerException e) {
+            sk[0] = "-";
+            sk[1] = "-";
             return sk;
         }
 

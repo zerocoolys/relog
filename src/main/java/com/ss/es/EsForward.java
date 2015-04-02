@@ -68,7 +68,7 @@ public class EsForward implements ElasticRequest {
                         mapSource.put(SE, sk[0]);
                         mapSource.put(KW, sk[1]);
                     }
-                } catch (UnsupportedEncodingException e) {
+                } catch (NullPointerException | UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
 
