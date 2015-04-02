@@ -27,7 +27,7 @@ public class SearchEngineParser implements Constants {
         String[] sk = new String[2];
         QueryStringDecoder decoder = new QueryStringDecoder(refer);
 
-        if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey()))) {
+        if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey())) || refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey()).replace("s", ""))) {
             sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
             sk[1] = decoder.parameters().get("wd").get(0);
             return sk;
@@ -86,7 +86,7 @@ public class SearchEngineParser implements Constants {
                     return typeEnum.name;
                 }
             }
-            
+
             return null;
         }
     }
