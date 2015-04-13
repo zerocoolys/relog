@@ -36,31 +36,31 @@ public class IPParser {
             JSONObject jsonObject = JSON.parseObject(jsonStr).getJSONObject("data");
 
             Map<String, String> ipInfoMap = new HashMap<>();
-            String region = jsonObject.getString("region");
+            String region = jsonObject.getString(Constants.REGION);
             if (region.isEmpty()) {
-                ipInfoMap.put("region", "国外");
-                ipInfoMap.put("city", "-");
-                ipInfoMap.put("isp", "-");
+                ipInfoMap.put(Constants.REGION, "国外");
+                ipInfoMap.put(Constants.CITY, "-");
+                ipInfoMap.put(Constants.ISP, "-");
             } else {
                 if (IP_REGION_SUFFIX2.equals(region))
-                    ipInfoMap.put("region", region.substring(0, 3));
+                    ipInfoMap.put(Constants.REGION, region.substring(0, 3));
                 else {
                     if (region.contains(IP_REGION_SUFFIX1) || region.contains(IP_REGION_SUFFIX3))
-                        ipInfoMap.put("region", region.substring(0, 2));
+                        ipInfoMap.put(Constants.REGION, region.substring(0, 2));
                     else
-                        ipInfoMap.put("region", region.replace("省", ""));
+                        ipInfoMap.put(Constants.REGION, region.replace("省", ""));
                 }
 
-                if (jsonObject.getString("city").isEmpty())
-                    ipInfoMap.put("city", "-");
+                if (jsonObject.getString(Constants.CITY).isEmpty())
+                    ipInfoMap.put(Constants.CITY, "-");
                 else
-                    ipInfoMap.put("city", jsonObject.getString("city"));
+                    ipInfoMap.put(Constants.CITY, jsonObject.getString(Constants.CITY));
 
 
-                if (jsonObject.getString("isp").isEmpty())
-                    ipInfoMap.put("isp", "-");
+                if (jsonObject.getString(Constants.ISP).isEmpty())
+                    ipInfoMap.put(Constants.ISP, "-");
                 else
-                    ipInfoMap.put("isp", jsonObject.getString("isp"));
+                    ipInfoMap.put(Constants.ISP, jsonObject.getString(Constants.ISP));
 
             }
 
