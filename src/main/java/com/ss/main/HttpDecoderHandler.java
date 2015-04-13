@@ -9,10 +9,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import redis.clients.jedis.Jedis;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -124,35 +121,42 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
     private Set<Cookie> handleCookies(HttpRequest request) {
         Set<Cookie> cookies;
         String value = request.headers().get(COOKIE);
-        if (value == null) {
-            cookies = Collections.emptySet();
-//            cookies = new HashSet<>();
-        } else {
+        if (value == null)
+            cookies = new HashSet<>();
+        else
             cookies = CookieDecoder.decode(value);
-        }
 
-//        boolean hasVid = false;
-//        String vid;
-//        if (!cookies.isEmpty()) {
-//            for (Cookie cookie : cookies) {
-//                if (VID.equals(cookie.getName())) {
-//                    hasVid = true;
-//                    break;
-//                }
-//            }
-//
-//            if (!hasVid) {
-//                vid = UUID.randomUUID().toString().replaceAll("-", "");
-//                Cookie _cookie = new DefaultCookie(VID, vid);
-//                _cookie.setMaxAge(COOKIE_EXPIRE);
-//                cookies.add(_cookie);
-//            }
-//        } else {
-//            vid = UUID.randomUUID().toString().replaceAll("-", "");
-//            Cookie _cookie = new DefaultCookie(VID, vid);
-//            _cookie.setMaxAge(COOKIE_EXPIRE);
-//            cookies.add(_cookie);
-//        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, -1);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long expire = calendar.getTimeInMillis();
+
+        boolean uvExists = false;
+        String uvId;
+        if (!cookies.isEmpty()) {
+            for (Cookie cookie : cookies) {
+                if (UCV.equals(cookie.getName())) {
+                    uvExists = true;
+                    break;
+                }
+            }
+
+            if (!uvExists) {
+                uvId = UUID.randomUUID().toString().replaceAll("-", "");
+                Cookie _cookie = new DefaultCookie(UCV, uvId);
+                _cookie.setMaxAge(expire);
+                cookies.add(_cookie);
+            }
+        } else {
+            uvId = UUID.randomUUID().toString().replaceAll("-", "");
+            Cookie _cookie = new DefaultCookie(UCV, uvId);
+            _cookie.setMaxAge(expire);
+            cookies.add(_cookie);
+        }
 
         return cookies;
     }

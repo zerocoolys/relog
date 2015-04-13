@@ -19,8 +19,9 @@ public interface Constants {
     String CURR_ADDRESS = "loc";
     String UNIX_TIME = "utime";
     String T = "t";         // trackId
-    String TT = "tt";       // UV标识符
-    String VID = "vid";     // 访客唯一标识码
+    String TT = "tt";       // 访问次数标识符
+    String VID = "vid";     // 访客唯一标识符
+    String UCV = "_ucv";    // 访客数(UV)区分标识符
     String RF = "rf";
     String SE = "se";
     String KW = "kw";
