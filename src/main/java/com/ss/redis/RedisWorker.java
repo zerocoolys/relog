@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 /**
  * Created by baizz on 2015-3-26.
  */
+@SuppressWarnings("unchecked")
 public class RedisWorker implements Constants {
 
     public RedisWorker(List<EsForward> forwards) {
@@ -43,10 +44,11 @@ public class RedisWorker implements Constants {
                         for (EsForward esForward : forwards)
                             esForward.add(mapSource);
                     }
-                } catch (IOException e) {
+                } catch (IOException | NullPointerException e) {
                     e.printStackTrace();
                 } finally {
-                    JRedisPools.returnJedis(jedis);
+                    if (jedis != null)
+                        jedis.close();
                 }
             }
         });

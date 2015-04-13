@@ -76,7 +76,8 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
                         jedis.lpush(ACCESS_MESSAGE, JSON.toJSONString(source));
                     } finally {
-                        JRedisPools.returnJedis(jedis);
+                        if (jedis != null)
+                            jedis.close();
                     }
 
                     writeResponse(ctx.channel(), cookies);

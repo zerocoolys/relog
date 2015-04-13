@@ -19,6 +19,9 @@ public class IPParser {
 
     private static final String IP_URL_TEMPLATE = "http://ip.taobao.com/service/getIpInfo.php?ip=%s";
     private static final String IP_CHECK_ADDRESS = "http://city.ip138.com/ip2city.asp";
+    private static final String IP_REGION_SUFFIX1 = "自治区";
+    private static final String IP_REGION_SUFFIX2 = "内蒙古自治区";
+    private static final String IP_REGION_SUFFIX3 = "特别行政区";
 
 
     public static Map<String, String> getIpInfo(String ip) throws IOException {
@@ -39,9 +42,26 @@ public class IPParser {
                 ipInfoMap.put("city", "-");
                 ipInfoMap.put("isp", "-");
             } else {
-                ipInfoMap.put("region", region);
-                ipInfoMap.put("city", jsonObject.getString("city"));
-                ipInfoMap.put("isp", jsonObject.getString("isp"));
+                if (IP_REGION_SUFFIX2.equals(region))
+                    ipInfoMap.put("region", region.substring(0, 3));
+                else {
+                    if (region.contains(IP_REGION_SUFFIX1) || region.contains(IP_REGION_SUFFIX3))
+                        ipInfoMap.put("region", region.substring(0, 2));
+                    else
+                        ipInfoMap.put("region", region.replace("省", ""));
+                }
+
+                if (jsonObject.getString("city").isEmpty())
+                    ipInfoMap.put("city", "-");
+                else
+                    ipInfoMap.put("city", jsonObject.getString("city"));
+
+
+                if (jsonObject.getString("isp").isEmpty())
+                    ipInfoMap.put("isp", "-");
+                else
+                    ipInfoMap.put("isp", jsonObject.getString("isp"));
+
             }
 
             return ipInfoMap;
