@@ -55,20 +55,9 @@ public class JRedisPools {
                 bundle.getString("redis.password"));
     }
 
-    public static JedisPool getPool() {
-        return jedisPool;
-    }
 
     public static Jedis getConnection() {
         return jedisPool.getResource();
-    }
-
-    public static void returnJedis(Jedis jedis) {
-        jedisPool.returnResource(jedis);
-    }
-
-    public static void returnBrokenJedis(Jedis jedis) {
-        jedisPool.returnBrokenResource(jedis);
     }
 
 }
