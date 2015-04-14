@@ -64,12 +64,9 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         source.remove("Referer");
 
                         cookies = handleCookies(req);
-                        for (Cookie cookie : cookies) {
-                            if (VID.equals(cookie.getName())) {
-                                source.put(VID, cookie.getValue());
-                                break;
-                            }
-                        }
+                        cookies.stream()
+                                .filter(c -> VID.equals(c.getName()) || UCV.equals(c.getName()))
+                                .forEach(cookie -> source.put(cookie.getName(), cookie.getValue()));
 
                         jedis.lpush(ACCESS_MESSAGE, JSON.toJSONString(source));
                     } finally {
