@@ -2,6 +2,8 @@ package com.ss.main;
 
 import io.netty.handler.codec.http.QueryStringDecoder;
 
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -30,7 +32,12 @@ public class SearchEngineParser implements Constants {
         try {
             if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey())) || refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey()).replace("s", ""))) {
                 sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
-                sk[1] = decoder.parameters().get("wd").get(0);
+                Map<String, List<String>> paramsMap = decoder.parameters();
+                if (paramsMap.get("wd") == null)
+                    sk[1] = paramsMap.get("word").get(0);
+                else
+                    sk[1] = paramsMap.get("wd").get(0);
+
                 return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey()))) {
                 sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
