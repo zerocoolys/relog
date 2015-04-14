@@ -25,5 +25,6 @@ public interface Constants {
     String RF = "rf";
     String SE = "se";
     String KW = "kw";
+    String RF_TYPE = "rf_type";     // 1. 直接访问, 2. 搜索引擎, 3. 外部链接
 
 }
