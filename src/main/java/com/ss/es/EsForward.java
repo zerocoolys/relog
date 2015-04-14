@@ -63,10 +63,15 @@ public class EsForward implements ElasticRequest {
                     if ("-".equals(refer)) {
                         mapSource.put(SE, "-");
                         mapSource.put(KW, "-");
+                        mapSource.put(RF_TYPE, 1);
                     } else {
                         String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
                         mapSource.put(SE, sk[0]);
                         mapSource.put(KW, sk[1]);
+                        if ("-".equals(sk[0]) && "-".equals(sk[1]))
+                            mapSource.put(RF_TYPE, 3);
+                        else
+                            mapSource.put(RF_TYPE, 2);
                     }
                 } catch (NullPointerException | UnsupportedEncodingException e) {
                     e.printStackTrace();
