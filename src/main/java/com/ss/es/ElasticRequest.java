@@ -40,6 +40,9 @@ public interface ElasticRequest extends Constants {
                     case UNIX_TIME:
                         doc.put(k, v);
                         break;
+                    case ET:
+                        doc.put(k, v);
+                        break;
                     default:
                         break;
                 }
