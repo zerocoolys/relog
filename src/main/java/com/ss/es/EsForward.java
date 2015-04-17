@@ -9,10 +9,7 @@ import org.elasticsearch.common.collect.Sets;
 
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -22,10 +19,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Created by yousheng on 15/3/16.
  */
 public class EsForward implements ElasticRequest {
-
-    // t -> TrackId; vid -> 访客唯一标识符； tt -> UV
-    private static final String ACCESS_PREFIX = "access-";
-    private static final String VISITOR_PREFIX = "visitor-";
 
     private BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
@@ -83,7 +76,23 @@ public class EsForward implements ElasticRequest {
 
                 Map<String, Object> doc = visitorExists(client.prepareSearch(), VISITOR_PREFIX + localDate.toString(), trackId, tt);
                 builder.setIndex(ACCESS_PREFIX + localDate.toString());
-                requestQueue.add(builder.request());
+
+
+                // 事件转化统计信息处理
+                String eventAttr = mapSource.getOrDefault(ET, "").toString();
+                Map<String, String> eventMap = new LinkedHashMap<>();
+
+
+                if (eventAttr.isEmpty())
+                    requestQueue.add(builder.request());
+                else {
+                    String[] eventArr = eventAttr.split("\\*");
+                    eventMap.put(ET_CATEGORY, eventArr[0]);
+                    eventMap.put(ET_ACTION, eventArr[1]);
+                    eventMap.put(ET_LABEL, eventArr[2]);
+                    eventMap.put(ET_VALUE, eventArr.length == 3 ? "" : eventArr[3]);
+                }
+
 
                 if (doc.isEmpty()) {
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
@@ -92,14 +101,31 @@ public class EsForward implements ElasticRequest {
                     Set<Long> utime = Sets.newHashSet(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));
                     mapSource.put(CURR_ADDRESS, currAddress.toArray(new String[currAddress.size()]));
                     mapSource.put(UNIX_TIME, utime.toArray(new Long[utime.size()]));
-
                     builder.setSource(mapSource);
-                    esOperator.pushIndexRequest(builder.request());
+
+
+                    if (!eventMap.isEmpty()) {
+                        List<Map<String, String>> events = new ArrayList<>();
+                        events.add(eventMap);
+                        mapSource.put(ET, events);
+                    }
+
+                    esOperator.pushIndexRequest(mapSource);
                 } else {
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
 
                     List<String> currAddress = (ArrayList) doc.get(CURR_ADDRESS);
                     List<Long> utime = (ArrayList) doc.get(UNIX_TIME);
+
+                    if (doc.containsKey(ET) && !eventMap.isEmpty()) {
+                        List<Map<String, String>> events = (ArrayList) doc.get(ET);
+                        events.add((eventMap));
+                        doc.put(ET, events);
+                    } else if (!doc.containsKey(ET) && !eventMap.isEmpty()) {
+                        List<Map<String, String>> events = new ArrayList<>();
+                        events.add(eventMap);
+                        doc.put(ET, events);
+                    }
 
                     currAddress.add(mapSource.remove(CURR_ADDRESS).toString());
                     utime.add(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));

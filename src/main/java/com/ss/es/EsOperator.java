@@ -1,10 +1,14 @@
 package com.ss.es;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -16,7 +20,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  */
 public class EsOperator implements ElasticRequest {
 
-    private static final ConcurrentLinkedQueue<IndexRequest> insertRequestQueue = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<Map<String, Object>> insertRequestQueue = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Map<String, Object>> updateRequestQueue = new ConcurrentLinkedQueue<>();
     private final TransportClient client;
 
@@ -28,7 +32,7 @@ public class EsOperator implements ElasticRequest {
     }
 
 
-    public void pushIndexRequest(IndexRequest request) {
+    public void pushIndexRequest(Map<String, Object> request) {
         insertRequestQueue.offer(request);
     }
 
@@ -44,8 +48,50 @@ public class EsOperator implements ElasticRequest {
                     bulkRequestBuilder.get();
                     bulkRequestBuilder = client.prepareBulk();
                 } else if (!insertRequestQueue.isEmpty()) {
-                    IndexRequest request = insertRequestQueue.poll();
-                    bulkRequestBuilder.add(request);
+                    Map<String, Object> requestMap = insertRequestQueue.poll();
+
+                    IndexRequestBuilder builder = client.prepareIndex();
+
+                    try {
+                        XContentBuilder contentBuilder = jsonBuilder().startObject();
+
+                        // 设置field
+                        for (Map.Entry<String, Object> entry : requestMap.entrySet()) {
+                            if (ET.equals(entry.getKey())) {
+                                continue;
+                            }
+
+                            contentBuilder.field(entry.getKey(), entry.getValue());
+                        }
+
+                        if (requestMap.containsKey(ET)) {
+
+                            List<Map<String, String>> mapList = (ArrayList) requestMap.get(ET);
+
+                            contentBuilder.startArray(ET);
+
+                            for (Map<String, String> map : mapList) {
+                                contentBuilder.startObject();
+                                for (Map.Entry<String, String> entry : map.entrySet()) {
+                                    contentBuilder.field(entry.getKey(), entry.getValue());
+                                }
+                                contentBuilder.endObject();
+                            }
+
+                            contentBuilder.endArray();
+                        }
+                        contentBuilder.endObject();
+
+
+                        builder.setIndex(VISITOR_PREFIX + LocalDate.now().toString());
+                        builder.setType(requestMap.get(T).toString());
+                        builder.setSource(contentBuilder);
+
+
+                        bulkRequestBuilder.add(builder.request());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                     if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                         bulkRequestBuilder.get();
@@ -69,15 +115,33 @@ public class EsOperator implements ElasticRequest {
                     Map<String, Object> requestMap = updateRequestQueue.poll();
 
                     try {
+                        XContentBuilder contentBuilder = jsonBuilder()
+                                .startObject()
+                                .field(CURR_ADDRESS, requestMap.get(CURR_ADDRESS))
+                                .field(UNIX_TIME, requestMap.get(UNIX_TIME));
+
+                        if (requestMap.containsKey(ET)) {
+                            List<Map<String, String>> mapList = (ArrayList) requestMap.get(ET);
+
+                            contentBuilder.startArray(ET);
+
+                            for (Map<String, String> map : mapList) {
+                                contentBuilder.startObject();
+                                for (Map.Entry<String, String> entry : map.entrySet()) {
+                                    contentBuilder.field(entry.getKey(), entry.getValue());
+                                }
+                                contentBuilder.endObject();
+                            }
+
+                            contentBuilder.endArray();
+                        }
+                        contentBuilder.endObject();
+
                         bulkRequestBuilder.add(client.prepareUpdate()
                                 .setIndex(requestMap.get(INDEX).toString())
                                 .setType(requestMap.get(TYPE).toString())
                                 .setId(requestMap.get(ID).toString())
-                                .setDoc(jsonBuilder()
-                                        .startObject()
-                                        .field(CURR_ADDRESS, requestMap.get(CURR_ADDRESS))
-                                        .field(UNIX_TIME, requestMap.get(UNIX_TIME))
-                                        .endObject()));
+                                .setDoc(contentBuilder));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
