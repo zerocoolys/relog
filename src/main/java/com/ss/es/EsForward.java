@@ -153,6 +153,13 @@ public class EsForward implements ElasticRequest {
                     continue;
 
                 bulkRequestBuilder.add(request);
+
+                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                    continue;
+                }
+
                 if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                     bulkRequestBuilder.get();
                     bulkRequestBuilder = client.prepareBulk();

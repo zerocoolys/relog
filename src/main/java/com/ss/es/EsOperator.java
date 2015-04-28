@@ -98,6 +98,12 @@ public class EsOperator implements ElasticRequest {
                     e.printStackTrace();
                 }
 
+                if (insertRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                    continue;
+                }
+
                 if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                     bulkRequestBuilder.get();
                     bulkRequestBuilder = client.prepareBulk();
@@ -154,6 +160,12 @@ public class EsOperator implements ElasticRequest {
                             .setDoc(contentBuilder));
                 } catch (IOException e) {
                     e.printStackTrace();
+                }
+
+                if (updateRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                    continue;
                 }
 
                 if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
