@@ -2,7 +2,7 @@ package com.ss.main;
 
 import com.ss.es.EsForward;
 import com.ss.es.EsPools;
-import com.ss.quartz.QuartzManager;
+import com.ss.quartz.TimerManager;
 import com.ss.redis.RedisWorker;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -20,7 +20,7 @@ public class Relog {
 
     public static void main(String[] args) {
 
-        QuartzManager.startJob();
+        TimerManager.startJob();
 
         // initialize elasticsearch
         EsPools.setMode(args[0]);

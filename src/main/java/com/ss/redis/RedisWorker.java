@@ -30,7 +30,7 @@ public class RedisWorker implements Constants {
                     String source = jedis.rpop(ACCESS_MESSAGE);
                     if (source != null) {
                         Map<String, Object> mapSource = (Map<String, Object>) JSON.parse(source);
-                        String remoteIp = mapSource.get("remote").toString().split(":")[0];
+                        String remoteIp = mapSource.get(REMOTE).toString().split(":")[0];
                         String ipInfo = jedis.hget(IP_AREA_INFO, remoteIp);
                         Map<String, String> ipMap = null;
                         if (ipInfo == null) {
@@ -39,10 +39,12 @@ public class RedisWorker implements Constants {
                         } else
                             ipMap = (Map<String, String>) JSON.parse(ipInfo);
 
-                        ipMap.forEach(mapSource::put);
+                        if (ipMap != null) {
+                            ipMap.forEach(mapSource::put);
 
-                        for (EsForward esForward : forwards)
-                            esForward.add(mapSource);
+                            for (EsForward esForward : forwards)
+                                esForward.add(mapSource);
+                        }
                     }
                 } catch (IOException | NullPointerException e) {
                     e.printStackTrace();
