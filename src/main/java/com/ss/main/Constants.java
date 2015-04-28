@@ -9,6 +9,8 @@ public interface Constants {
     String ACCESS_MESSAGE = "access_message";
     String IP_AREA_INFO = "ip_area_information";
 
+    String DELIMITER = "-";
+
     // Elasticsearch index prefix
     String ACCESS_PREFIX = "access-";
     String VISITOR_PREFIX = "visitor-";

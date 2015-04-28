@@ -46,22 +46,22 @@ public class EsForward implements ElasticRequest {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (mapSource == null)
+                if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
                 String trackId = mapSource.get(T).toString();
                 String tt = mapSource.get(TT).toString();
                 try {
                     String refer = mapSource.get(RF).toString();
-                    if ("-".equals(refer)) {
-                        mapSource.put(SE, "-");
-                        mapSource.put(KW, "-");
+                    if (DELIMITER.equals(refer)) {
+                        mapSource.put(SE, DELIMITER);
+                        mapSource.put(KW, DELIMITER);
                         mapSource.put(RF_TYPE, 1);
                     } else {
                         String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
                         mapSource.put(SE, sk[0]);
                         mapSource.put(KW, sk[1]);
-                        if ("-".equals(sk[0]) && "-".equals(sk[1]))
+                        if (DELIMITER.equals(sk[0]) && DELIMITER.equals(sk[1]))
                             mapSource.put(RF_TYPE, 3);
                         else
                             mapSource.put(RF_TYPE, 2);
