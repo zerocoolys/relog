@@ -11,19 +11,18 @@ import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by yousheng on 15/3/16.
  */
+@SuppressWarnings("unchecked")
 public class EsForward implements ElasticRequest {
 
     private BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
     public EsForward(TransportClient client) {
-        ConcurrentLinkedQueue<IndexRequest> requestQueue = new ConcurrentLinkedQueue<>();
+        BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
         EsOperator esOperator = new EsOperator(client);
         preHandle(client, requestQueue, esOperator);
         handleRequest(client, requestQueue);
@@ -33,13 +32,9 @@ public class EsForward implements ElasticRequest {
         queue.add(obj);
     }
 
-    private void preHandle(TransportClient client, ConcurrentLinkedQueue<IndexRequest> requestQueue, EsOperator esOperator) {
-
-        Executors.newSingleThreadExecutor().execute(() -> {
-
+    private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue, EsOperator esOperator) {
+        Thread t = new Thread(() -> {
             while (true) {
-                IndexRequestBuilder builder = client.prepareIndex();
-
                 Map<String, Object> mapSource = null;
                 try {
                     mapSource = queue.take();
@@ -48,6 +43,8 @@ public class EsForward implements ElasticRequest {
                 }
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
+
+                IndexRequestBuilder builder = client.prepareIndex();
 
                 String trackId = mapSource.get(T).toString();
                 String tt = mapSource.get(TT).toString();
@@ -137,25 +134,34 @@ public class EsForward implements ElasticRequest {
 
         });
 
+        t.setName("request-preHandle");
+        t.start();
+
     }
 
-    private void handleRequest(TransportClient client, ConcurrentLinkedQueue<IndexRequest> requestQueue) {
-        Executors.newSingleThreadExecutor().execute(() -> {
+    private void handleRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+        Thread t = new Thread(() -> {
             BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             while (true) {
-                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                IndexRequest request = null;
+                try {
+                    request = requestQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (request == null)
+                    continue;
+
+                bulkRequestBuilder.add(request);
+                if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
                     bulkRequestBuilder.get();
                     bulkRequestBuilder = client.prepareBulk();
-                } else if (!requestQueue.isEmpty()) {
-                    bulkRequestBuilder.add(requestQueue.poll());
-                    if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
-                        bulkRequestBuilder.get();
-                        bulkRequestBuilder = client.prepareBulk();
-                    }
                 }
 
             }
         });
+        t.setName("handleAccessInsert");
+        t.start();
     }
 
 }
