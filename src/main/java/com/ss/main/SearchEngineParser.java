@@ -65,13 +65,13 @@ public class SearchEngineParser implements Constants {
                 return sk;
             }
         } catch (NullPointerException e) {
-            sk[0] = "-";
-            sk[1] = "-";
+            sk[0] = DELIMITER;
+            sk[1] = DELIMITER;
             return sk;
         }
 
-        sk[0] = "-";
-        sk[1] = "-";
+        sk[0] = DELIMITER;
+        sk[1] = DELIMITER;
         return sk;
     }
 
