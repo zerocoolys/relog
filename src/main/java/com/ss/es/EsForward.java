@@ -8,6 +8,8 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.collect.Sets;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -58,12 +60,16 @@ public class EsForward implements ElasticRequest {
                         String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
                         mapSource.put(SE, sk[0]);
                         mapSource.put(KW, sk[1]);
-                        if (DELIMITER.equals(sk[0]) && DELIMITER.equals(sk[1]))
+                        if (DELIMITER.equals(sk[0]) && DELIMITER.equals(sk[1])) {
                             mapSource.put(RF_TYPE, 3);
-                        else
+
+                            // extract domain from rf
+                            URL url = new URL(refer);
+                            mapSource.put(DOMAIN, url.getProtocol() + "://" + url.getHost());
+                        } else
                             mapSource.put(RF_TYPE, 2);
                     }
-                } catch (NullPointerException | UnsupportedEncodingException e) {
+                } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
                 }
 
