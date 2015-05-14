@@ -1,5 +1,6 @@
 package com.ss.es;
 
+import com.ss.main.KeywordExtractor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
@@ -54,6 +55,14 @@ public class EsOperator implements ElasticRequest {
 
                 if (requestMap == null)
                     continue;
+
+                List<String> locList = (ArrayList) requestMap.get(CURR_ADDRESS);
+                if (locList.get(0).contains(SEM_KEYWORD_IDENTIFIER)) {
+                    // keyword parse
+                    Map<String, Object> keywordInfoMap = KeywordExtractor.parse(locList.get(0));
+                    if (!keywordInfoMap.isEmpty())
+                        requestMap.putAll(keywordInfoMap);
+                }
 
                 IndexRequestBuilder builder = client.prepareIndex();
 

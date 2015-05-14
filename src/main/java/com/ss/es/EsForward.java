@@ -1,12 +1,15 @@
 package com.ss.es;
 
 import com.ss.main.SearchEngineParser;
+import com.ss.utils.UrlUtils;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.collect.Sets;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -14,6 +17,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * Created by yousheng on 15/3/16.
@@ -69,6 +74,21 @@ public class EsForward implements ElasticRequest {
                         } else
                             mapSource.put(RF_TYPE, 2);
                     }
+
+                    String location = UrlUtils.removeProtocol(mapSource.get(CURR_ADDRESS).toString());
+                    location = location.substring(0, location.indexOf("?"));
+                    Map<String,String> pathMap = new HashMap<>();
+
+
+                    final AtomicInteger integer = new AtomicInteger(0);
+                    Consumer<String> pathConsumer = (String c) -> pathMap.put("path" + (integer.getAndIncrement()), c);
+
+                    Arrays.asList(location.split("/")).stream().filter((p)->{
+                        return !p.isEmpty() || !p.startsWith("http:") ;
+                    }).forEach(pathConsumer);
+
+                    mapSource.put("paths",pathMap);
+
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
                 }
