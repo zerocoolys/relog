@@ -8,8 +8,6 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.collect.Sets;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -76,19 +74,19 @@ public class EsForward implements ElasticRequest {
                     }
 
                     String location = UrlUtils.removeProtocol(mapSource.get(CURR_ADDRESS).toString());
-                    location = location.substring(0, location.indexOf("?"));
-                    Map<String,String> pathMap = new HashMap<>();
+                    if (location.contains("?"))
+                        location = location.substring(0, location.indexOf("?"));
 
+                    Map<String, String> pathMap = new HashMap<>();
 
                     final AtomicInteger integer = new AtomicInteger(0);
                     Consumer<String> pathConsumer = (String c) -> pathMap.put("path" + (integer.getAndIncrement()), c);
 
-                    Arrays.asList(location.split("/")).stream().filter((p)->{
-                        return !p.isEmpty() || !p.startsWith("http:") ;
+                    Arrays.asList(location.split("/")).stream().filter((p) -> {
+                        return !p.isEmpty() || !p.startsWith("http:");
                     }).forEach(pathConsumer);
 
-                    mapSource.put("paths",pathMap);
-
+                    mapSource.put(PATHS, pathMap);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
                 }
@@ -116,7 +114,7 @@ public class EsForward implements ElasticRequest {
                     eventMap.put(ET_VALUE, eventArr.length == 3 ? "" : eventArr[3]);
                 }
 
-
+                mapSource.remove(PATHS);
                 if (doc.isEmpty()) {
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
 

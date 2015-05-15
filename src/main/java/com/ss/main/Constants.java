@@ -33,6 +33,7 @@ public interface Constants {
     String KW = "kw";       // 搜索词
     String RF_TYPE = "rf_type";     // 1. 直接访问, 2. 搜索引擎, 3. 外部链接
     String DOMAIN = "dm";
+    String PATHS = "paths";
 
     String ET = "et";       // 事件跟踪
     String ET_CATEGORY = "category";    // 监控目标的类型名称
