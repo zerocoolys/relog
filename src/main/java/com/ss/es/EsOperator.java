@@ -56,10 +56,10 @@ public class EsOperator implements ElasticRequest {
                 if (requestMap == null)
                     continue;
 
-                List<String> locList = (ArrayList) requestMap.get(CURR_ADDRESS);
-                if (locList.get(0).contains(SEM_KEYWORD_IDENTIFIER)) {
+                String[] locArr = (String[]) requestMap.get(CURR_ADDRESS);
+                if (locArr[0].contains(SEM_KEYWORD_IDENTIFIER)) {
                     // keyword parse
-                    Map<String, Object> keywordInfoMap = KeywordExtractor.parse(locList.get(0));
+                    Map<String, Object> keywordInfoMap = KeywordExtractor.parse(locArr[0]);
                     if (!keywordInfoMap.isEmpty())
                         requestMap.putAll(keywordInfoMap);
                 }
