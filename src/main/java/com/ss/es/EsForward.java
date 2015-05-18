@@ -61,13 +61,12 @@ public class EsForward implements ElasticRequest {
                         mapSource.put(RF_TYPE, 1);
                     } else {
                         String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, "UTF-8"));
-                        if (DELIMITER.equals(sk[0]) && DELIMITER.equals(sk[1])) {
+                        // extract domain from rf
+                        URL url = new URL(refer);
+                        mapSource.put(DOMAIN, url.getProtocol() + "://" + url.getHost());
+                        if (DELIMITER.equals(sk[0]) && DELIMITER.equals(sk[1]))
                             mapSource.put(RF_TYPE, 3);
-
-                            // extract domain from rf
-                            URL url = new URL(refer);
-                            mapSource.put(DOMAIN, url.getProtocol() + "://" + url.getHost());
-                        } else {
+                        else {
                             mapSource.put(SE, sk[0]);
                             mapSource.put(KW, sk[1]);
                             mapSource.put(RF_TYPE, 2);
