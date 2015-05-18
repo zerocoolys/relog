@@ -7,6 +7,8 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,12 +58,19 @@ public class EsOperator implements ElasticRequest {
                 if (requestMap == null)
                     continue;
 
-                String[] locArr = (String[]) requestMap.get(CURR_ADDRESS);
-                if (locArr[0].contains(SEM_KEYWORD_IDENTIFIER)) {
-                    // keyword parse
-                    Map<String, Object> keywordInfoMap = KeywordExtractor.parse(locArr[0]);
-                    if (!keywordInfoMap.isEmpty())
-                        requestMap.putAll(keywordInfoMap);
+                String[] locArr = (String[]) requestMap.remove(CURR_ADDRESS);
+                try {
+                    if (locArr[0].contains(SEM_KEYWORD_IDENTIFIER)) {
+                        // keyword parse
+                        Map<String, Object> keywordInfoMap = KeywordExtractor.parse(locArr[0]);
+                        if (!keywordInfoMap.isEmpty())
+                            requestMap.putAll(keywordInfoMap);
+
+                        URL url = new URL(locArr[0]);
+                        requestMap.put(CURR_ADDRESS, new String[]{url.getProtocol() + "://" + url.getHost()});
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
                 }
 
                 IndexRequestBuilder builder = client.prepareIndex();
