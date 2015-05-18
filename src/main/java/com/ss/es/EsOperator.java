@@ -58,7 +58,7 @@ public class EsOperator implements ElasticRequest {
                 if (requestMap == null)
                     continue;
 
-                String[] locArr = (String[]) requestMap.remove(CURR_ADDRESS);
+                String[] locArr = (String[]) requestMap.get(CURR_ADDRESS);
                 try {
                     if (locArr[0].contains(SEM_KEYWORD_IDENTIFIER)) {
                         // keyword parse
