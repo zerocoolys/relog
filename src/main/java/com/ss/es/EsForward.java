@@ -93,7 +93,17 @@ public class EsForward implements ElasticRequest {
 
                 LocalDate localDate = LocalDate.now();
                 builder.setType(trackId);
-                builder.setSource(mapSource);
+                Map<String, Object> tmpMapSource = new HashMap<>(mapSource);
+                try {
+                    String _loc = tmpMapSource.get(CURR_ADDRESS).toString();
+                    if (_loc.contains(SEM_KEYWORD_IDENTIFIER)) {
+                        URL url = new URL(_loc);
+                        tmpMapSource.put(CURR_ADDRESS, url.getProtocol() + "://" + url.getHost());
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                builder.setSource(tmpMapSource);
 
                 Map<String, Object> doc = visitorExists(client.prepareSearch(), VISITOR_PREFIX + localDate.toString(), trackId, tt);
                 builder.setIndex(ACCESS_PREFIX + localDate.toString());
