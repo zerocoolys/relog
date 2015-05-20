@@ -35,6 +35,7 @@ public interface Constants {
     String DOMAIN = "dm";
     String PATHS = "paths";
     String ENTRANCE = "entrance";   // 入口页面
+    String DESTINATION_URL = "des_url";     // 关键词推广URL
 
     String ET = "et";       // 事件跟踪
     String ET_CATEGORY = "category";    // 监控目标的类型名称
