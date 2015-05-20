@@ -103,7 +103,6 @@ public class EsForward implements ElasticRequest {
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
-                builder.setSource(tmpMapSource);
 
                 Map<String, Object> doc = visitorExists(client.prepareSearch(), VISITOR_PREFIX + localDate.toString(), trackId, tt);
                 builder.setIndex(ACCESS_PREFIX + localDate.toString());
@@ -113,10 +112,15 @@ public class EsForward implements ElasticRequest {
                 String eventAttr = mapSource.getOrDefault(ET, "").toString();
                 Map<String, String> eventMap = new LinkedHashMap<>();
 
+                if (eventAttr.isEmpty()) {
+                    if (doc.isEmpty())  // 入口页面
+                        tmpMapSource.put(ENTRANCE, 1);
+                    else
+                        tmpMapSource.put(ENTRANCE, 0);
 
-                if (eventAttr.isEmpty())
+                    builder.setSource(tmpMapSource);
                     requestQueue.add(builder.request());
-                else {
+                } else {
                     String[] eventArr = eventAttr.split("\\*");
                     eventMap.put(ET_CATEGORY, eventArr[0]);
                     eventMap.put(ET_ACTION, eventArr[1]);
