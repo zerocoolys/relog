@@ -40,10 +40,10 @@ public class EsPools {
                     }
 
                     if (bundle != null) {
-                        String host = bundle.getString("es.host");
-                        String clusterName = bundle.getString("es.cluster");
+                        String hosts = bundle.getString("es.host");
+                        String cluster = bundle.getString("es.cluster");
 
-                        clients.add(initEsClient(host, clusterName));
+                        clients.addAll(initEsClient(hosts, cluster));
                     }
                 }
             }
@@ -52,29 +52,37 @@ public class EsPools {
         return clients;
     }
 
-    private static TransportClient initEsClient(String host, String clusterName) {
-        TransportClient client = null;
+    private static List<TransportClient> initEsClient(String hosts, String cluster) {
+        List<TransportClient> clients = new ArrayList<>();
         try {
-            String[] arr = host.split(":");
+            String[] hostArr = hosts.split(";");
+            String[] clusters = cluster.split(";");
+            for (int i = 0, l = hostArr.length; i < l; i++) {
+                List<InetSocketTransportAddress> addressList = new ArrayList<>();
+                for (String host : hostArr[i].split(",")) {
+                    String[] arr = host.split(":");
+                    if (arr.length == 1)
+                        addressList.add(new InetSocketTransportAddress(arr[0], 9300));
+                    else if (arr.length == 2)
+                        addressList.add(new InetSocketTransportAddress(arr[0], Integer.valueOf(arr[1])));
+                }
+                String clusterName = clusters[i];
 
-            // 设置client.transport.sniff为true来使客户端去嗅探整个集群的状态, 把集群中其它机器的ip地址加到客户端中
-            Settings settings = ImmutableSettings.settingsBuilder().put(esMap)
-                    .put("cluster.name", clusterName)
-                    .put("client.transport.sniff", true)
-                    .put("client.transport.ignore_cluster_name", true)
-                    .put("client.transport.ping_timeout", "10s")
-                    .put("client.transport.nodes_sampler_interval", "15s").build();
-            client = new TransportClient(settings);
-
-            if (arr.length == 1)
-                client.addTransportAddress(new InetSocketTransportAddress(arr[0], 19300));
-            else if (arr.length == 2)
-                client.addTransportAddress(new InetSocketTransportAddress(arr[0], Integer.parseInt(arr[1])));
+                Settings settings = ImmutableSettings.settingsBuilder().put(esMap)
+                        .put("cluster.name", clusterName)
+                        .put("client.transport.sniff", true)
+                        .put("client.transport.ignore_cluster_name", true)
+                        .put("client.transport.ping_timeout", "10s")
+                        .put("client.transport.nodes_sampler_interval", "15s").build();
+                TransportClient client = new TransportClient(settings);
+                client.addTransportAddresses(addressList.toArray(new InetSocketTransportAddress[addressList.size()]));
+                clients.add(client);
+            }
         } catch (final Exception e) {
             e.printStackTrace();
         }
 
-        return client;
+        return clients;
     }
 
     public static String getMode() {
