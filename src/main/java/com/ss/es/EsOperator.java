@@ -68,7 +68,9 @@ public class EsOperator implements ElasticRequest {
 
                         URL url = new URL(locArr[0]);
                         requestMap.put(CURR_ADDRESS, new String[]{url.getProtocol() + "://" + url.getHost()});
-                    }
+                        requestMap.put(ENTRANCE, url.getProtocol() + "://" + url.getHost());
+                    } else
+                        requestMap.put(ENTRANCE, locArr[0]);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
