@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.ss.es.EsForward;
 import com.ss.main.Constants;
 import com.ss.main.IPParser;
+import org.elasticsearch.common.collect.Maps;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class RedisWorker implements Constants {
                             ipMap.forEach(mapSource::put);
 
                             for (EsForward esForward : forwards)
-                                esForward.add(mapSource);
+                                esForward.add(Maps.newHashMap(mapSource));
                         }
                     }
                 } catch (IOException | NullPointerException e) {
