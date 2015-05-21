@@ -133,6 +133,7 @@ public class EsForward implements ElasticRequest {
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
 
                     Set<String> currAddress = Sets.newHashSet(mapSource.remove(CURR_ADDRESS).toString());
+                    System.out.println("\nThe first view time: " + mapSource.get(UNIX_TIME));
                     Set<Long> utime = Sets.newHashSet(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));
                     mapSource.put(CURR_ADDRESS, currAddress.toArray(new String[currAddress.size()]));
                     mapSource.put(UNIX_TIME, utime.toArray(new Long[utime.size()]));
