@@ -5,6 +5,8 @@ package com.ss.main;
  */
 public interface Constants {
 
+    String REAL_IP = "X-Forwarded-For";
+
     // Redis key
     String ACCESS_MESSAGE = "access_message";
     String IP_AREA_INFO = "ip_area_information";

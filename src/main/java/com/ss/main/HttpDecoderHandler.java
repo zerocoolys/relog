@@ -46,13 +46,13 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
                         MessageObject mo = new MessageObject();
                         mo.setHttpMessage(req);
-                        String remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
-
+//                        String remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
+//
 //                        mo.method(req.getMethod().toString())
 //                                .version(req.getProtocolVersion().toString())
 //                                .remote(remote);
 
-                        mo.add(REMOTE, remote);
+                        mo.add(REMOTE, req.headers().get(REAL_IP));
                         mo.add(METHOD, req.getMethod().toString());
                         mo.add(VERSION, req.getProtocolVersion().toString());
                         mo.add(UNIX_TIME, System.currentTimeMillis());
@@ -67,6 +67,8 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                                 source.put(k, v.get(0));
                         });
                         source.remove("Referer");
+                        if (source.containsKey(REAL_IP))
+                            source.remove(REAL_IP);
 
                         cookies = handleCookies(req);
                         cookies.stream()
