@@ -6,7 +6,7 @@ package com.ss.quartz;
 /**
  * Created by baizz on 2015-3-26.
  *
- * @deprecated
+ * @deprecated {@link com.ss.quartz.TimerManager}
  */
 public class QuartzManager {
 //

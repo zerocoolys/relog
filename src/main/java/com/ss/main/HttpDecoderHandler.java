@@ -1,13 +1,12 @@
 package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
-import com.ss.redis.JRedisPools;
+import com.ss.mq.producer.LogProducer;
 import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
-import redis.clients.jedis.Jedis;
 
 import java.util.*;
 
@@ -39,47 +38,42 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
                 if (decoder.parameters().get(T) != null) {
                     Map<String, Object> source = new HashMap<>();
-                    Set<Cookie> cookies = null;
-                    Jedis jedis = null;
-                    try {
-                        jedis = JRedisPools.getConnection();
+                    Set<Cookie> cookies;
 
-                        MessageObject mo = new MessageObject();
-                        mo.setHttpMessage(req);
-//                        String remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
+                    MessageObject mo = new MessageObject();
+                    mo.setHttpMessage(req);
+//                  String remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
 //
-//                        mo.method(req.getMethod().toString())
-//                                .version(req.getProtocolVersion().toString())
-//                                .remote(remote);
+//                  mo.method(req.getMethod().toString())
+//                         .version(req.getProtocolVersion().toString())
+//                         .remote(remote);
 
-                        mo.add(REMOTE, req.headers().get(REAL_IP));
-                        mo.add(METHOD, req.getMethod().toString());
-                        mo.add(VERSION, req.getProtocolVersion().toString());
-                        mo.add(UNIX_TIME, System.currentTimeMillis());
+                    mo.add(REMOTE, req.headers().get(REAL_IP));
+                    mo.add(METHOD, req.getMethod().toString());
+                    mo.add(VERSION, req.getProtocolVersion().toString());
+                    mo.add(UNIX_TIME, System.currentTimeMillis());
 
-                        source.putAll(mo.getAttribute());
-                        mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
+                    source.putAll(mo.getAttribute());
+                    mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
 
-                        decoder.parameters().forEach((k, v) -> {
-                            if (v.isEmpty())
-                                source.put(k, "");
-                            else
-                                source.put(k, v.get(0));
-                        });
-                        source.remove("Referer");
-                        if (source.containsKey(REAL_IP))
-                            source.remove(REAL_IP);
+                    decoder.parameters().forEach((k, v) -> {
+                        if (v.isEmpty())
+                            source.put(k, "");
+                        else
+                            source.put(k, v.get(0));
+                    });
+                    source.remove("Referer");
+                    if (source.containsKey(REAL_IP))
+                        source.remove(REAL_IP);
 
-                        cookies = handleCookies(req);
-                        cookies.stream()
-                                .filter(c -> VID.equals(c.getName()) || UCV.equals(c.getName()))
-                                .forEach(cookie -> source.put(cookie.getName(), cookie.getValue()));
-
-                        jedis.lpush(ACCESS_MESSAGE, JSON.toJSONString(source));
-                    } finally {
-                        if (jedis != null)
-                            jedis.close();
-                    }
+                    cookies = handleCookies(req);
+                    cookies.stream()
+                            .filter(c -> VID.equals(c.getName()) || UCV.equals(c.getName()))
+                            .forEach(cookie -> source.put(cookie.getName(), cookie.getValue()));
+                    // send message
+                    LogProducer producer = new LogProducer(RelogConfig.getKafkaTopic());
+                    producer.handleMessage(JSON.toJSONString(source));
+                    producer.close();
 
                     writeResponse(ctx.channel(), cookies);
                 }

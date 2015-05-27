@@ -1,6 +1,6 @@
 package com.ss.es;
 
-import com.ss.main.SearchEngineParser;
+import com.ss.parser.SearchEngineParser;
 import com.ss.utils.UrlUtils;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;

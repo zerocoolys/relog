@@ -1,6 +1,6 @@
 package com.ss.es;
 
-import com.ss.main.KeywordExtractor;
+import com.ss.parser.KeywordExtractor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;

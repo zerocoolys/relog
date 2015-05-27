@@ -1,5 +1,6 @@
 package com.ss.es;
 
+import com.ss.main.RelogConfig;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -12,7 +13,6 @@ import java.util.*;
  */
 public class EsPools {
 
-    private static String mode = null;
     private static int bulkRequestNumber;
 
     private static List<TransportClient> clients = new ArrayList<>();
@@ -28,7 +28,7 @@ public class EsPools {
                 if (clients.isEmpty()) {
                     ResourceBundle bundle = null;
 
-                    switch (mode) {
+                    switch (RelogConfig.getMode()) {
                         case "dev":
                             bundle = ResourceBundle.getBundle("esDev");
                             break;
@@ -85,13 +85,6 @@ public class EsPools {
         return clients;
     }
 
-    public static String getMode() {
-        return mode;
-    }
-
-    public static void setMode(String mode) {
-        EsPools.mode = mode;
-    }
 
     public static int getBulkRequestNumber() {
         return bulkRequestNumber;
