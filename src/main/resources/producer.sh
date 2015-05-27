@@ -1,9 +1,9 @@
-#!/bin/bash
-mode=dev
-port=8088
-bulk=1000
+#!/usr/bin/env bash
+mode=prod
+topic=relog
+port=20001
 
-while getopts "m:p:b:" arg
+while getopts "m:p:t:" arg
     do
         case $arg in
             "m")
@@ -12,8 +12,8 @@ while getopts "m:p:b:" arg
             "p")
                 port=$OPTARG
                 ;;
-            "b")
-                bulk=$OPTARG
+            "t")
+                topic=$OPTARG
                 ;;
             "?")
                 echo "unknow argument"
@@ -21,4 +21,4 @@ while getopts "m:p:b:" arg
         esac
     done
 
-java -cp .:./lib/*:./conf com.ss.main.Relog ${mode} ${port} ${bulk}
+java -cp .:./lib/*:./conf com.ss.main.RelogProducerMain ${mode} ${topic} ${port}

@@ -3,7 +3,6 @@ package com.ss.main;
 import com.ss.es.EsForward;
 import com.ss.es.EsPools;
 import com.ss.quartz.TimerManager;
-import com.ss.redis.RedisWorker;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -14,23 +13,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by yousheng on 15/3/16.
+ * Created by dolphineor on 2015-5-27.
  */
-public class Relog {
+public class RelogProducerMain {
 
     public static void main(String[] args) {
-
         TimerManager.startJob();
 
-        // initialize elasticsearch
-        EsPools.setMode(args[0]);
-        int port = Integer.parseInt(args[1]);
-        EsPools.setBulkRequestNumber(Integer.parseInt(args[2]));
+        // initialize config
+        RelogConfig.setMode(args[0]);
+        RelogConfig.setKafkaTopic(args[1]);
+        int port = Integer.parseInt(args[2]);
 
         List<EsForward> esForwards = new ArrayList<>();
         EsPools.getEsClient().forEach(client -> esForwards.add(new EsForward(client)));
-
-        new RedisWorker(esForwards);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
 
@@ -53,6 +49,5 @@ public class Relog {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-
     }
 }

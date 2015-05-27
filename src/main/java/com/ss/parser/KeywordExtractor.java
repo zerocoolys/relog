@@ -1,7 +1,8 @@
-package com.ss.main;
+package com.ss.parser;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.ss.main.Constants;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
 import java.io.BufferedReader;

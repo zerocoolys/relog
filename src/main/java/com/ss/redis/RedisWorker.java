@@ -3,7 +3,7 @@ package com.ss.redis;
 import com.alibaba.fastjson.JSON;
 import com.ss.es.EsForward;
 import com.ss.main.Constants;
-import com.ss.main.IPParser;
+import com.ss.parser.IPParser;
 import org.elasticsearch.common.collect.Maps;
 import redis.clients.jedis.Jedis;
 
@@ -14,6 +14,8 @@ import java.util.concurrent.Executors;
 
 /**
  * Created by baizz on 2015-3-26.
+ *
+ * @deprecated Use {@link com.ss.mq.consumer.HLConsumerGroup} instead.
  */
 @SuppressWarnings("unchecked")
 public class RedisWorker implements Constants {

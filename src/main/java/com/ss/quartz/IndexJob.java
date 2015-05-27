@@ -14,7 +14,7 @@ package com.ss.quartz;
 /**
  * Created by baizz on 2015-3-26.
  *
- * @deprecated
+ * @deprecated {@link com.ss.quartz.IndexTask}
  */
 public class IndexJob /*implements Job*/ {
 

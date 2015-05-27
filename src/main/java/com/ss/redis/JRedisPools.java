@@ -1,6 +1,7 @@
 package com.ss.redis;
 
-import com.ss.es.EsPools;
+import com.ss.main.Constants;
+import com.ss.main.RelogConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -11,7 +12,7 @@ import java.util.ResourceBundle;
 /**
  * Created by baizz on 2015-03-17.
  */
-public class JRedisPools {
+public class JRedisPools implements Constants {
 
     private static JedisPool jedisPool;
 
@@ -44,7 +45,7 @@ public class JRedisPools {
                 .getString("redis.pool.testOnReturn")));
 
         String hostName = bundle.getString("redis.hostName");
-        if ("dev".equals(EsPools.getMode()))
+        if (DEV_MODE.equals(RelogConfig.getMode()))
             hostName = hostName.split(",")[0];
         else
             hostName = hostName.split(",")[1];

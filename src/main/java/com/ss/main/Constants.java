@@ -5,6 +5,12 @@ package com.ss.main;
  */
 public interface Constants {
 
+    String DEV_MODE = "dev";
+    String PROD_MODE = "prod";
+
+    String ZK_CONNECTOR = "zookeeper.connect";
+    String KAFKA_BROKER = "metadata.broker.list";
+
     String REAL_IP = "X-Forwarded-For";
 
     // Redis key

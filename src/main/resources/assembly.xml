@@ -21,7 +21,13 @@
 
     <files>
         <file>
-            <source>src/main/resources/run.sh</source>
+            <source>src/main/resources/producer.sh</source>
+            <outputDirectory>/</outputDirectory>
+            <fileMode>0755</fileMode>
+            <filtered>true</filtered>
+        </file>
+        <file>
+            <source>src/main/resources/consumer.sh</source>
             <outputDirectory>/</outputDirectory>
             <fileMode>0755</fileMode>
             <filtered>true</filtered>
