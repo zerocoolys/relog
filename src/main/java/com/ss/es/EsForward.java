@@ -51,8 +51,8 @@ public class EsForward implements ElasticRequest {
 
                 IndexRequestBuilder builder = client.prepareIndex();
 
-                String trackId = mapSource.get(T).toString();
-                String tt = mapSource.get(TT).toString();
+                String trackId = mapSource.get(T).toString();   // 对应于elasticsearch的type
+                String tt = mapSource.get(TT).toString();   // 访问次数标识符
                 try {
                     String refer = mapSource.get(RF).toString();
                     if (DELIMITER.equals(refer)) {
@@ -129,7 +129,7 @@ public class EsForward implements ElasticRequest {
                 }
 
                 mapSource.remove(PATHS);
-                if (doc.isEmpty()) {
+                if (doc.isEmpty()) {    // 一次新的访问
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
 
                     Set<String> currAddress = Sets.newHashSet(mapSource.remove(CURR_ADDRESS).toString());
@@ -145,7 +145,7 @@ public class EsForward implements ElasticRequest {
                     }
 
                     esOperator.pushIndexRequest(mapSource);
-                } else {
+                } else {    // 同一次访问
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
 
                     List<String> currAddress = (ArrayList) doc.get(CURR_ADDRESS);
