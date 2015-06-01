@@ -24,8 +24,8 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 @SuppressWarnings("unchecked")
 public class EsOperator implements ElasticRequest {
 
-    private static final BlockingQueue<Map<String, Object>> insertRequestQueue = new LinkedBlockingQueue<>();
-    private static final BlockingQueue<Map<String, Object>> updateRequestQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Map<String, Object>> insertRequestQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Map<String, Object>> updateRequestQueue = new LinkedBlockingQueue<>();
     private final TransportClient client;
 
 
@@ -140,7 +140,7 @@ public class EsOperator implements ElasticRequest {
 
     private void handleUpdateRequest() {
         Thread t = new Thread(() -> {
-            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+//            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             while (true) {
                 Map<String, Object> requestMap = null;
                 try {
@@ -175,25 +175,32 @@ public class EsOperator implements ElasticRequest {
                     }
                     contentBuilder.endObject();
 
-                    bulkRequestBuilder.add(client.prepareUpdate()
+                    client.prepareUpdate()
                             .setIndex(requestMap.get(INDEX).toString())
                             .setType(requestMap.get(TYPE).toString())
                             .setId(requestMap.get(ID).toString())
-                            .setDoc(contentBuilder));
+                            .setDoc(contentBuilder)
+                            .get();
+
+//                    bulkRequestBuilder.add(client.prepareUpdate()
+//                            .setIndex(requestMap.get(INDEX).toString())
+//                            .setType(requestMap.get(TYPE).toString())
+//                            .setId(requestMap.get(ID).toString())
+//                            .setDoc(contentBuilder));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-                if (updateRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
-                    bulkRequestBuilder.get();
-                    bulkRequestBuilder = client.prepareBulk();
-                    continue;
-                }
-
-                if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
-                    bulkRequestBuilder.get();
-                    bulkRequestBuilder = client.prepareBulk();
-                }
+//                if (updateRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+//                    bulkRequestBuilder.get();
+//                    bulkRequestBuilder = client.prepareBulk();
+//                    continue;
+//                }
+//
+//                if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
+//                    bulkRequestBuilder.get();
+//                    bulkRequestBuilder = client.prepareBulk();
+//                }
 
             }
         });
