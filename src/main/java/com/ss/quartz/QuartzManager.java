@@ -4,7 +4,7 @@ package com.ss.quartz;
 //import org.quartz.impl.StdSchedulerFactory;
 
 /**
- * Created by baizz on 2015-3-26.
+ * Created by dolphineor on 2015-3-26.
  *
  * @deprecated {@link com.ss.quartz.TimerManager}
  */

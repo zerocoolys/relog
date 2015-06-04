@@ -25,4 +25,4 @@ while getopts "m:b:t:n:" arg
         esac
     done
 
-java -cp .:./lib/*:./conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}
+java -Xms2g -Xmx2g -cp .:./lib/*:./conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}

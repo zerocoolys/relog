@@ -21,4 +21,4 @@ while getopts "m:p:t:" arg
         esac
     done
 
-java -cp .:./lib/*:./conf com.ss.main.RelogProducerMain ${mode} ${topic} ${port}
+java -Xms2g -Xmx2g -cp .:./lib/*:./conf com.ss.main.RelogProducerMain ${mode} ${topic} ${port}

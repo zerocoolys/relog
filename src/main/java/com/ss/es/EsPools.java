@@ -9,7 +9,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import java.util.*;
 
 /**
- * Created by baizz on 2015-3-20.
+ * Created by dolphineor on 2015-3-20.
  */
 public class EsPools {
 

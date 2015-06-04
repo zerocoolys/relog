@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.Timer;
 
 /**
- * Created by baizz on 2015-4-28.
+ * Created by dolphineor on 2015-4-28.
  */
 public class TimerManager {
 

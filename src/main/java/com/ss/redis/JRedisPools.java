@@ -10,7 +10,7 @@ import redis.clients.jedis.Protocol;
 import java.util.ResourceBundle;
 
 /**
- * Created by baizz on 2015-03-17.
+ * Created by dolphineor on 2015-03-17.
  */
 public class JRedisPools implements Constants {
 

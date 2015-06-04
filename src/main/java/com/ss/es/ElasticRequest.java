@@ -12,14 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by baizz on 2015-3-23.
+ * Created by dolphineor on 2015-3-23.
+ *
+ * @deprecated
  */
 public interface ElasticRequest extends Constants {
-
-    String ID = "_id";
-    String INDEX = "index";
-    String TYPE = "_type";
-
 
     default Map<String, Object> visitorExists(SearchRequestBuilder searchBuilder, String index, String type, String tt) {
         SearchRequestBuilder searchRequestBuilder = searchBuilder.setIndices(index).setTypes(type);

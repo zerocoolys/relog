@@ -1,7 +1,3 @@
 # relog
-log
 
-### shell参数使用说明
-1. -m 运行模式(dev, prod)
-2. -p netty端口, 默认8088
-3. -b bulkRequestNumber, 批量请求数值, 默认1000
+### 采用kafka分布式消息进行流量统计处理

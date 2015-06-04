@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 /**
- * Created by baizz on 2015-3-26.
+ * Created by dolphineor on 2015-3-26.
  *
  * @deprecated Use {@link com.ss.mq.consumer.HLConsumerGroup} instead.
  */

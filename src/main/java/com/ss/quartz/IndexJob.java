@@ -12,7 +12,7 @@ package com.ss.quartz;
 //import java.util.ResourceBundle;
 
 /**
- * Created by baizz on 2015-3-26.
+ * Created by dolphineor on 2015-3-26.
  *
  * @deprecated {@link com.ss.quartz.IndexTask}
  */
