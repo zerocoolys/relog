@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by baizz on 2015-3-23.
+ * Created by dolphineor on 2015-3-23.
  *
  * @deprecated
  */

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * Created by baizz on 2015-3-24.
+ * Created by dolphineor on 2015-3-24.
  */
 public class SearchEngineParser implements Constants {
 
@@ -66,13 +66,13 @@ public class SearchEngineParser implements Constants {
                 return sk;
             }
         } catch (NullPointerException e) {
-            sk[0] = DELIMITER;
-            sk[1] = DELIMITER;
+            sk[0] = PLACEHOLDER;
+            sk[1] = PLACEHOLDER;
             return sk;
         }
 
-        sk[0] = DELIMITER;
-        sk[1] = DELIMITER;
+        sk[0] = PLACEHOLDER;
+        sk[1] = PLACEHOLDER;
         return sk;
     }
 

@@ -24,7 +24,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
- * Created by baizz on 2015-3-20.
+ * Created by dolphineor on 2015-3-20.
  *
  * @deprecated
  */

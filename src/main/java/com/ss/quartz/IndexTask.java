@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
 import java.util.TimerTask;
 
 /**
- * Created by baizz on 2015-4-28.
+ * Created by dolphineor on 2015-4-28.
  */
 public class IndexTask extends TimerTask {
     @Override

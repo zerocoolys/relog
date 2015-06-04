@@ -58,11 +58,11 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
                     decoder.parameters().forEach((k, v) -> {
                         if (v.isEmpty())
-                            source.put(k, "");
+                            source.put(k, EMPTY_STRING);
                         else
                             source.put(k, v.get(0));
                     });
-                    source.remove("Referer");
+                    source.remove(REFERRER);
                     if (source.containsKey(REAL_IP))
                         source.remove(REAL_IP);
 
@@ -92,7 +92,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
         // Decide whether to close the connection or not.
         boolean close = request.headers().contains(CONNECTION, HttpHeaders.Values.CLOSE, true)
-                || request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)
+                || request.getProtocolVersion().equals(HttpVersion.HTTP_1_1)
                 && !request.headers().contains(CONNECTION, HttpHeaders.Values.KEEP_ALIVE, true);
 
         // Build the response object.
@@ -144,13 +144,13 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
             }
 
             if (!uvExists) {
-                uvId = UUID.randomUUID().toString().replaceAll("-", "");
+                uvId = UUID.randomUUID().toString().replaceAll("-", EMPTY_STRING);
                 Cookie _cookie = new DefaultCookie(UCV, uvId);
                 _cookie.setMaxAge(expire);
                 cookies.add(_cookie);
             }
         } else {
-            uvId = UUID.randomUUID().toString().replaceAll("-", "");
+            uvId = UUID.randomUUID().toString().replaceAll("-", EMPTY_STRING);
             Cookie _cookie = new DefaultCookie(UCV, uvId);
             _cookie.setMaxAge(expire);
             cookies.add(_cookie);

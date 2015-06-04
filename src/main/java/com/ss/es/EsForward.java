@@ -1,5 +1,7 @@
 package com.ss.es;
 
+import com.alibaba.fastjson.JSON;
+import com.ss.main.Constants;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.utils.UrlUtils;
@@ -25,15 +27,15 @@ import java.util.function.Consumer;
 /**
  * Created by yousheng on 15/3/16.
  */
-@SuppressWarnings("unchecked")
-public class EsForward implements ElasticRequest {
+public class EsForward implements Constants {
 
-    private BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
     public EsForward(TransportClient client) {
         BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
-        EsOperator esOperator = new EsOperator(client);
-        preHandle(client, requestQueue, esOperator);
+//        EsOperator esOperator = new EsOperator(client);
+//        preHandle(client, requestQueue, esOperator);
+        preHandle(client, requestQueue);
         handleRequest(client, requestQueue);
     }
 
@@ -41,7 +43,7 @@ public class EsForward implements ElasticRequest {
         queue.add(obj);
     }
 
-    private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue, EsOperator esOperator) {
+    private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
         Thread t = new Thread(() -> {
             while (true) {
                 Map<String, Object> mapSource = null;
@@ -52,6 +54,9 @@ public class EsForward implements ElasticRequest {
                 }
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
+
+                // 事件跟踪标识符
+                int eventIdentifier = Integer.valueOf(mapSource.getOrDefault(ET_IDENTIFIER, 0).toString());
 
                 // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                 int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
@@ -72,9 +77,9 @@ public class EsForward implements ElasticRequest {
 
                     try {
                         URL url = new URL(_location);
-                        _location = url.getProtocol() + "://" + url.getHost().split("/")[0];
+                        _location = url.getProtocol() + DOUBLE_SLASH + url.getHost().split("/")[0];
                         mapSource.put(CURR_ADDRESS, _location);
-                        mapSource.put(DESTINATION_URL, hasPromotion ? _location : DELIMITER);
+                        mapSource.put(DESTINATION_URL, hasPromotion ? _location : PLACEHOLDER);
                     } catch (MalformedURLException e) {
                         e.printStackTrace();
                     }
@@ -90,17 +95,17 @@ public class EsForward implements ElasticRequest {
                 try {
                     String refer = mapSource.get(RF).toString();
                     // 来源类型解析
-                    if (DELIMITER.equals(refer)) {  // 直接访问
-                        mapSource.put(SE, DELIMITER);
-                        mapSource.put(KW, DELIMITER);
+                    if (PLACEHOLDER.equals(refer)) {  // 直接访问
+                        mapSource.put(SE, PLACEHOLDER);
+                        mapSource.put(KW, PLACEHOLDER);
                         mapSource.put(RF_TYPE, 1);
-                        mapSource.put(DOMAIN, DELIMITER);
+                        mapSource.put(DOMAIN, PLACEHOLDER);
                     } else {
                         String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()));
                         // extract domain from rf
                         URL url = new URL(refer);
-                        mapSource.put(DOMAIN, url.getProtocol() + "://" + url.getHost());
-                        if (DELIMITER.equals(sk[0]) && DELIMITER.equals(sk[1]))
+                        mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
+                        if (PLACEHOLDER.equals(sk[0]) && PLACEHOLDER.equals(sk[1]))
                             mapSource.put(RF_TYPE, 3);
                         else {
                             mapSource.put(SE, sk[0]);
@@ -111,22 +116,33 @@ public class EsForward implements ElasticRequest {
 
                     // 访问URL路径解析
                     String location = UrlUtils.removeProtocol(mapSource.get(CURR_ADDRESS).toString());
-                    if (location.contains("?"))
-                        location = location.substring(0, location.indexOf("?"));
+                    if (location.contains(QUESTION_MARK))
+                        location = location.substring(0, location.indexOf(QUESTION_MARK));
 
                     Map<String, String> pathMap = new HashMap<>();
 
                     final AtomicInteger integer = new AtomicInteger(0);
-                    Consumer<String> pathConsumer = (String c) -> pathMap.put("path" + (integer.getAndIncrement()), c);
+                    Consumer<String> pathConsumer = (String c) -> pathMap.put(HTTP_PATH + (integer.getAndIncrement()), c);
 
-                    Arrays.asList(location.split("/")).stream().filter((p) -> {
-                        return !p.isEmpty() || !p.startsWith("http:");
-                    }).forEach(pathConsumer);
+                    Arrays.asList(location.split("/")).stream().filter((p) -> !p.isEmpty() || !p.startsWith(HTTP_PREFIX)).forEach(pathConsumer);
 
                     mapSource.put(PATHS, pathMap);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
                 }
+
+                // 事件跟踪处理
+                if (eventIdentifier == 1) {
+                    String[] eventArr = mapSource.get(ET).toString().split("\\*");
+                    Map<String, Object> etJsonMap = new HashMap<>();
+                    etJsonMap.put(ET_CATEGORY, eventArr[0]);
+                    etJsonMap.put(ET_ACTION, eventArr[1]);
+                    etJsonMap.put(ET_LABEL, eventArr[2]);
+                    etJsonMap.put(ET_VALUE, eventArr.length == 3 ? EMPTY_STRING : eventArr[3]);
+                    mapSource.put(ET, JSON.toJSONString(etJsonMap));
+                    mapSource.put(ENTRANCE, -1);
+                } else
+                    mapSource.put(ET_IDENTIFIER, 0);
 
 //                LocalDate localDate = LocalDate.now();
 //                Map<String, Object> tmpMapSource = new HashMap<>(mapSource);
@@ -148,7 +164,6 @@ public class EsForward implements ElasticRequest {
                 requestQueue.add(builder.request());
 
 
-                // TODO 事件转化统计信息处理, migrate to access
 //                String eventAttr = mapSource.getOrDefault(ET, "").toString();
 //                Map<String, String> eventMap = new LinkedHashMap<>();
 //
