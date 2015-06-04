@@ -148,8 +148,8 @@ public class EsForward implements ElasticRequest {
                 } else {    // 同一次访问
                     builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
 
-                    List<String> currAddress = (ArrayList) doc.get(CURR_ADDRESS);
-                    List<Long> utime = (ArrayList) doc.get(UNIX_TIME);
+                    List<String> currAddress = (ArrayList<String>) doc.get(CURR_ADDRESS);
+                    List<Long> utime = (ArrayList<Long>) doc.get(UNIX_TIME);
 
                     if (doc.containsKey(ET) && !eventMap.isEmpty()) {
                         List<Map<String, String>> events = (ArrayList) doc.get(ET);

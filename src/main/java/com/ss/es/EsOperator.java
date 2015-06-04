@@ -2,9 +2,14 @@ package com.ss.es;
 
 import com.ss.parser.KeywordExtractor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.get.GetResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -24,6 +29,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 @SuppressWarnings("unchecked")
 public class EsOperator implements ElasticRequest {
 
+    private final Logger LOGGER = LoggerFactory.getLogger(EsOperator.class);
     private final BlockingQueue<Map<String, Object>> insertRequestQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<Map<String, Object>> updateRequestQueue = new LinkedBlockingQueue<>();
     private final TransportClient client;
@@ -121,13 +127,13 @@ public class EsOperator implements ElasticRequest {
                 }
 
                 if (insertRequestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
-                    bulkRequestBuilder.get();
+                    submitRequest(bulkRequestBuilder);
                     bulkRequestBuilder = client.prepareBulk();
                     continue;
                 }
 
                 if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
-                    bulkRequestBuilder.get();
+                    submitRequest(bulkRequestBuilder);
                     bulkRequestBuilder = client.prepareBulk();
                 }
 
@@ -175,12 +181,25 @@ public class EsOperator implements ElasticRequest {
                     }
                     contentBuilder.endObject();
 
-                    client.prepareUpdate()
+                    UpdateResponse response = client.prepareUpdate()
                             .setIndex(requestMap.get(INDEX).toString())
                             .setType(requestMap.get(TYPE).toString())
                             .setId(requestMap.get(ID).toString())
                             .setDoc(contentBuilder)
                             .get();
+
+                    // debug code
+                    GetResult result = response.getGetResult();
+                    Map<String, Object> resultSource = result.getSource();
+                    List<String> resultLocations = (ArrayList<String>) resultSource.get(CURR_ADDRESS);
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("\n_id: " + result.getId() +
+                                ", _version: " + result.getVersion() +
+                                ", _source.tt: " + resultSource.get(TT) +
+                                ", pv: " + resultLocations.size() +
+                                ", the latest location: " + resultLocations.get(resultLocations.size() - 1)
+                                + "\n");
+                    }
 
 //                    bulkRequestBuilder.add(client.prepareUpdate()
 //                            .setIndex(requestMap.get(INDEX).toString())
@@ -207,6 +226,13 @@ public class EsOperator implements ElasticRequest {
 
         t.setName("handleVisitorUpdate");
         t.start();
+    }
+
+    private void submitRequest(BulkRequestBuilder bulkRequestBuilder) {
+        BulkResponse responses = bulkRequestBuilder.get();
+        if (responses.hasFailures()) {
+            System.out.println("Failure: " + responses.buildFailureMessage());
+        }
     }
 
 }
