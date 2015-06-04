@@ -25,6 +25,8 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
  * Created by baizz on 2015-3-20.
+ *
+ * @deprecated
  */
 @SuppressWarnings("unchecked")
 public class EsOperator implements ElasticRequest {

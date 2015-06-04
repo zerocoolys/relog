@@ -23,6 +23,10 @@ public interface Constants {
     String ACCESS_PREFIX = "access-";
     String VISITOR_PREFIX = "visitor-";
 
+    String ID = "_id";
+    String INDEX = "index";
+    String TYPE = "_type";
+
     // Elasticsearch field
     String REMOTE = "remote";
     String METHOD = "method";
@@ -44,6 +48,7 @@ public interface Constants {
     String PATHS = "paths";
     String ENTRANCE = "entrance";   // 入口页面
     String DESTINATION_URL = "des_url";     // 关键词推广URL
+    String NEW_VISIT = "n";
 
     String ET = "et";       // 事件跟踪
     String ET_CATEGORY = "category";    // 监控目标的类型名称
