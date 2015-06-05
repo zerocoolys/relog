@@ -55,9 +55,6 @@ public class EsForward implements Constants {
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
-                // 事件跟踪标识符
-                int eventIdentifier = Integer.valueOf(mapSource.getOrDefault(ET_IDENTIFIER, 0).toString());
-
                 // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                 int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
                 if (identifier == 1) {
@@ -88,7 +85,7 @@ public class EsForward implements Constants {
                 }
 
 
-                String trackId = mapSource.get(T).toString();   // 对应于elasticsearch的type
+                String trackId = mapSource.get(T).toString();
                 String tt = mapSource.get(TT).toString();   // 访问次数标识符
                 mapSource.put(TT, tt);
 
@@ -132,7 +129,8 @@ public class EsForward implements Constants {
                 }
 
                 // 事件跟踪处理
-                if (eventIdentifier == 1) {
+                String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
+                if (!eventInfo.isEmpty()) {
                     String[] eventArr = mapSource.get(ET).toString().split("\\*");
                     Map<String, Object> etJsonMap = new HashMap<>();
                     etJsonMap.put(ET_CATEGORY, eventArr[0]);
@@ -141,8 +139,7 @@ public class EsForward implements Constants {
                     etJsonMap.put(ET_VALUE, eventArr.length == 3 ? EMPTY_STRING : eventArr[3]);
                     mapSource.put(ET, JSON.toJSONString(etJsonMap));
                     mapSource.put(ENTRANCE, -1);
-                } else
-                    mapSource.put(ET_IDENTIFIER, 0);
+                }
 
 //                LocalDate localDate = LocalDate.now();
 //                Map<String, Object> tmpMapSource = new HashMap<>(mapSource);

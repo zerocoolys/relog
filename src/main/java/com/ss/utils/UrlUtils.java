@@ -18,7 +18,7 @@ public class UrlUtils {
 
     /**
      * canonicalizeUrl
-     * <p/>
+     * <p>
      * Borrowed from Jsoup.
      *
      * @param url
@@ -46,7 +46,6 @@ public class UrlUtils {
     }
 
     /**
-     *
      * @param url
      * @return
      */

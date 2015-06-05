@@ -46,9 +46,9 @@ public class JRedisPools implements Constants {
 
         String hostName = bundle.getString("redis.hostName");
         if (DEV_MODE.equals(RelogConfig.getMode()))
-            hostName = hostName.split(",")[0];
+            hostName = hostName.split(";")[0];
         else
-            hostName = hostName.split(",")[1];
+            hostName = hostName.split(";")[1];
 
         jedisPool = new JedisPool(config, hostName,
                 Integer.valueOf(bundle.getString("redis.port")),
