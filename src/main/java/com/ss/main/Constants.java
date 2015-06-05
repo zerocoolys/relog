@@ -28,6 +28,7 @@ public interface Constants {
 
     // Elasticsearch index prefix
     String ACCESS_PREFIX = "access-";
+    @Deprecated
     String VISITOR_PREFIX = "visitor-";
 
     String ID = "_id";      // elasticsearch文档id
@@ -47,17 +48,16 @@ public interface Constants {
     String TT = "tt";       // 访问次数标识符
     String VID = "vid";     // 访客唯一标识符
     String UCV = "_ucv";    // 访客数(UV)区分标识符
-    String RF = "rf";
+    String RF = "rf";       // Referrer
     String SE = "se";       // 搜索引擎名称
     String KW = "kw";       // 搜索词
     String RF_TYPE = "rf_type";     // 1. 直接访问, 2. 搜索引擎, 3. 外部链接
     String DOMAIN = "dm";           // 依据rf解析出的domain
     String PATHS = "paths";         // 访问当前页面的路径信息
-    String ENTRANCE = "entrance";   // 入口页面
+    String ENTRANCE = "entrance";   // 入口页面(1->入口页面, 0->普通页面, -1->事件跟踪信息)
     String DESTINATION_URL = "des_url";     // 关键词推广URL
     String NEW_VISIT = "n";         // 是否一次新的访问
 
-    String ET_IDENTIFIER = "ett";   // 事件跟踪标识符(1->当前doc为事件统计信息, 0->普通pv信息)
     String ET = "et";               // 事件跟踪
     String ET_CATEGORY = "category";    // 监控目标的类型名称
     String ET_ACTION = "action";    // 与目标的交互行为

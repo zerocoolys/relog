@@ -41,18 +41,18 @@ public class MessageObject implements Constants {
         return this;
     }
 
-    public MessageObject version(String version){
+    public MessageObject version(String version) {
         attribute.put(VERSION, version);
         return this;
     }
 
-    public MessageObject remote(String remote){
-        attribute.put(REMOTE,remote);
+    public MessageObject remote(String remote) {
+        attribute.put(REMOTE, remote);
         return this;
     }
 
-    public MessageObject kv(String key , String value){
-        attribute.put(key,value);
+    public MessageObject kv(String key, String value) {
+        attribute.put(key, value);
         return this;
     }
 
