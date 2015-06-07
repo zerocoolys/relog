@@ -82,4 +82,11 @@ public interface Constants {
     String ES_KEYWORD_ID = "kwid";      // 推广关键词id
     String ES_KEYWORD_NAME = "kwna";    // 推广关键词名称
 
+
+
+    String VAL_RF_TYPE_DIRECT = "1";
+    String VAL_RF_TYPE_SE = "2";
+    String VAL_RF_TYPE_OUTLINK = "3";
+    String VAL_RF_TYPE_SITES = "0";
+
 }

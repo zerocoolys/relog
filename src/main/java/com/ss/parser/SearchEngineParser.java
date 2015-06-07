@@ -3,9 +3,7 @@ package com.ss.parser;
 import com.ss.main.Constants;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Created by dolphineor on 2015-3-24.
@@ -26,7 +24,7 @@ public class SearchEngineParser implements Constants {
      * @param refer
      * @return
      */
-    public static String[] getSK(String refer) {
+    public static boolean getSK(String refer, List<String> list) {
         String[] sk = new String[2];
         QueryStringDecoder decoder = new QueryStringDecoder(refer);
 
@@ -38,42 +36,39 @@ public class SearchEngineParser implements Constants {
                     sk[1] = paramsMap.get("word").get(0);
                 else
                     sk[1] = paramsMap.get("wd").get(0);
-
-                return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey()))) {
                 sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
                 sk[1] = decoder.parameters().get("query").get(0);
-                return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey()))) {
                 sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
                 sk[1] = decoder.parameters().get("q").get(0);
-                return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.BING.getKey()))) {
                 sk[0] = TypeEnum.BING.getName(TypeEnum.BING.getKey());
                 sk[1] = decoder.parameters().get("q").get(0);
-                return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey() + "_m"))) {
                 sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
                 sk[1] = decoder.parameters().get("word").get(0);
-                return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey() + "_m"))) {
                 sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
                 sk[1] = decoder.parameters().get("keyword").get(0);
-                return sk;
             } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey() + "_m"))) {
                 sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
                 sk[1] = decoder.parameters().get("q").get(0);
-                return sk;
             }
         } catch (NullPointerException e) {
             sk[0] = PLACEHOLDER;
             sk[1] = PLACEHOLDER;
-            return sk;
+            return false;
         }
 
-        sk[0] = PLACEHOLDER;
-        sk[1] = PLACEHOLDER;
-        return sk;
+        list.addAll(Arrays.asList(sk));
+
+        list.removeIf((o) -> {
+            return o == null;
+        });
+        return !list.isEmpty();
+//        sk[0] = PLACEHOLDER;
+//        sk[1] = PLACEHOLDER;
     }
 
     public enum TypeEnum {
@@ -103,5 +98,14 @@ public class SearchEngineParser implements Constants {
 
             return null;
         }
+    }
+
+
+    public static void main(String[] args) {
+        List<String> list = new ArrayList<>();
+        System.out.println("args = " + getSK("https://www.baidu.com/link?url=GYM6Rw_RdsD0fZkkEhEm4EC3UITIG4D4rjcmatAZcvXuXMi09l_ldmdJ6T5fErCm2DSKjQ3OXo7Y8bDtVorRTa&cl=3&tn=baidutop10&fr=top1000&wd=2015%E9%AB%98%E8%80%83%E8%AF%95%E9%A2%98", list));
+
+
+        System.out.println("list.toString() = " + list.toString());
     }
 }

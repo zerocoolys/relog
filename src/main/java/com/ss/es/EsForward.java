@@ -10,6 +10,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.collect.Lists;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -18,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -95,19 +97,28 @@ public class EsForward implements Constants {
                     if (PLACEHOLDER.equals(refer)) {  // 直接访问
                         mapSource.put(SE, PLACEHOLDER);
                         mapSource.put(KW, PLACEHOLDER);
-                        mapSource.put(RF_TYPE, 1);
+                        mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
                         mapSource.put(DOMAIN, PLACEHOLDER);
                     } else {
-                        String[] sk = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()));
+
+                        List<String> skList = Lists.newArrayList();
+                        boolean found = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
                         // extract domain from rf
                         URL url = new URL(refer);
                         mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
-                        if (PLACEHOLDER.equals(sk[0]) && PLACEHOLDER.equals(sk[1]))
-                            mapSource.put(RF_TYPE, 3);
-                        else {
-                            mapSource.put(SE, sk[0]);
-                            mapSource.put(KW, sk[1]);
-                            mapSource.put(RF_TYPE, 2);
+                        if (found) {
+                            mapSource.put(SE, skList.remove(0));
+                            mapSource.put(KW, skList.remove(0));
+                            mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
+                        } else {
+
+                            String host = url.getHost();
+                            URL curUrl = new URL(mapSource.get(CURR_ADDRESS).toString());
+                            if (host.equals(curUrl.getHost())) {
+                                mapSource.put(RF_TYPE, VAL_RF_TYPE_SITES);
+                            } else {
+                                mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
+                            }
                         }
                     }
 
