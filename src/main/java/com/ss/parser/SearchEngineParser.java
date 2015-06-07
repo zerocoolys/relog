@@ -3,7 +3,10 @@ package com.ss.parser;
 import com.ss.main.Constants;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 /**
  * Created by dolphineor on 2015-3-24.
@@ -56,19 +59,15 @@ public class SearchEngineParser implements Constants {
                 sk[1] = decoder.parameters().get("q").get(0);
             }
         } catch (NullPointerException e) {
-            sk[0] = PLACEHOLDER;
-            sk[1] = PLACEHOLDER;
+//            sk[0] = PLACEHOLDER;
+//            sk[1] = PLACEHOLDER;
             return false;
         }
 
         list.addAll(Arrays.asList(sk));
+        list.removeIf(o -> o == null);
 
-        list.removeIf((o) -> {
-            return o == null;
-        });
         return !list.isEmpty();
-//        sk[0] = PLACEHOLDER;
-//        sk[1] = PLACEHOLDER;
     }
 
     public enum TypeEnum {
@@ -100,12 +99,4 @@ public class SearchEngineParser implements Constants {
         }
     }
 
-
-    public static void main(String[] args) {
-        List<String> list = new ArrayList<>();
-        System.out.println("args = " + getSK("https://www.baidu.com/link?url=GYM6Rw_RdsD0fZkkEhEm4EC3UITIG4D4rjcmatAZcvXuXMi09l_ldmdJ6T5fErCm2DSKjQ3OXo7Y8bDtVorRTa&cl=3&tn=baidutop10&fr=top1000&wd=2015%E9%AB%98%E8%80%83%E8%AF%95%E9%A2%98", list));
-
-
-        System.out.println("list.toString() = " + list.toString());
-    }
 }

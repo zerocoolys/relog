@@ -100,7 +100,6 @@ public class EsForward implements Constants {
                         mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
                         mapSource.put(DOMAIN, PLACEHOLDER);
                     } else {
-
                         List<String> skList = Lists.newArrayList();
                         boolean found = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
                         // extract domain from rf
@@ -111,14 +110,12 @@ public class EsForward implements Constants {
                             mapSource.put(KW, skList.remove(0));
                             mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
                         } else {
-
-                            String host = url.getHost();
-                            URL curUrl = new URL(mapSource.get(CURR_ADDRESS).toString());
-                            if (host.equals(curUrl.getHost())) {
+                            String rfHost = url.getHost();
+                            URL currLocUrl = new URL(mapSource.get(CURR_ADDRESS).toString());
+                            if (rfHost.equals(currLocUrl.getHost()))
                                 mapSource.put(RF_TYPE, VAL_RF_TYPE_SITES);
-                            } else {
+                            else
                                 mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
-                            }
                         }
                     }
 

@@ -83,7 +83,6 @@ public interface Constants {
     String ES_KEYWORD_NAME = "kwna";    // 推广关键词名称
 
 
-
     String VAL_RF_TYPE_DIRECT = "1";
     String VAL_RF_TYPE_SE = "2";
     String VAL_RF_TYPE_OUTLINK = "3";
