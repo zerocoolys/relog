@@ -61,7 +61,7 @@ public class KeywordExtractor implements Constants {
             conn.disconnect();
 
             return infoMap;
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             e.printStackTrace();
         }
 
