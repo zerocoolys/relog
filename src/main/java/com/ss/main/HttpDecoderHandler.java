@@ -8,6 +8,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -51,7 +52,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                     mo.add(REMOTE, req.headers().get(REAL_IP));
                     mo.add(METHOD, req.getMethod().toString());
                     mo.add(VERSION, req.getProtocolVersion().toString());
-                    mo.add(UNIX_TIME, System.currentTimeMillis());
+                    mo.add(INDEX, ACCESS_PREFIX + LocalDate.now().toString());
 
                     source.putAll(mo.getAttribute());
                     mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
@@ -62,9 +63,14 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         else
                             source.put(k, v.get(0));
                     });
+                    mo.add(UNIX_TIME, source.getOrDefault(DT, System.currentTimeMillis()));
+
                     source.remove(REFERRER);
                     if (source.containsKey(REAL_IP))
                         source.remove(REAL_IP);
+
+                    if (source.containsKey(DT))
+                        source.remove(DT);
 
                     cookies = handleCookies(req);
                     cookies.stream()
