@@ -15,9 +15,11 @@ public interface Constants {
 
     String HTTP_PATH = "path";
     String HTTP_PREFIX = "http:";
+    String WWW_PREFIX = "www.";
     String DOUBLE_SLASH = "://";
     String REAL_IP = "X-Forwarded-For";
     String REFERRER = "Referer";
+    String DT = "dt";
 
     // Redis key
     String ACCESS_MESSAGE = "access_message";
@@ -30,6 +32,9 @@ public interface Constants {
     String ACCESS_PREFIX = "access-";
     @Deprecated
     String VISITOR_PREFIX = "visitor-";
+    String ES_TYPE_EVENT_SUFFIX = "_event";
+    String ES_TYPE_XY_SUFFIX = "_xy";
+    String ES_TYPE_PROMOTION_URL_SUFFIX = "_promotion_url";
 
     String ID = "_id";      // elasticsearch文档id
     String INDEX = "index"; // elasticsearch索引名称
@@ -54,15 +59,25 @@ public interface Constants {
     String RF_TYPE = "rf_type";     // 1. 直接访问, 2. 搜索引擎, 3. 外部链接
     String DOMAIN = "dm";           // 依据rf解析出的domain
     String PATHS = "paths";         // 访问当前页面的路径信息
-    String ENTRANCE = "entrance";   // 入口页面(1->入口页面, 0->普通页面, -1->事件跟踪信息)
+    String ENTRANCE = "entrance";   // 入口页面(1->入口页面, 0->普通页面)
     String DESTINATION_URL = "des_url";     // 关键词推广URL
     String NEW_VISIT = "n";         // 是否一次新的访问
+    String XY = "xy";               // xy坐标信息
+
+    // Elasticsearch 推广URL字段信息
+    String UT = "ut";
+    String DMS = "dms";
+    String LET = "let";
+    String NETT = "nett";
+    String NETD = "netd";
+    String NTTP = "nttp";
+    String SRV = "srv";
 
     String ET = "et";               // 事件跟踪
-    String ET_CATEGORY = "category";    // 监控目标的类型名称
-    String ET_ACTION = "action";    // 与目标的交互行为
-    String ET_LABEL = "label";      // 事件的额外信息
-    String ET_VALUE = "value";      // 事件的额外数值信息
+    String ET_CATEGORY = "et_category";    // 监控目标的类型名称
+    String ET_ACTION = "et_action";    // 与目标的交互行为
+    String ET_LABEL = "et_label";      // 事件的额外信息
+    String ET_VALUE = "et_value";      // 事件的额外数值信息
 
     String KEYWORD_INFO_REQUEST_URL = "http://182.92.227.79:9080/user/%s/keyword/%s";
     String SEM_ACCOUNT_ID = "accountId";

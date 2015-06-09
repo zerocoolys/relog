@@ -1,9 +1,9 @@
 package com.ss.es;
 
-import com.alibaba.fastjson.JSON;
 import com.ss.main.Constants;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
+import com.ss.redis.JRedisPools;
 import com.ss.utils.UrlUtils;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -11,12 +11,12 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.collect.Lists;
+import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +45,7 @@ public class EsForward implements Constants {
         queue.add(obj);
     }
 
+    @SuppressWarnings("unchecked")
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
         Thread t = new Thread(() -> {
             while (true) {
@@ -56,6 +57,41 @@ public class EsForward implements Constants {
                 }
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
+
+                String trackId = mapSource.get(T).toString();
+
+                String esType = EMPTY_STRING;
+                Jedis jedis = null;
+                try {
+                    jedis = JRedisPools.getConnection();
+                    esType = jedis.get(trackId);
+                } finally {
+                    if (jedis != null) {
+                        jedis.close();
+                    }
+                }
+
+                // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
+                String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
+                String xyCoordinateInfo = mapSource.getOrDefault(XY, EMPTY_STRING).toString();
+                String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
+                if (!eventInfo.isEmpty()) {
+                    mapSource.put(TYPE, esType.isEmpty() ? trackId + ES_TYPE_EVENT_SUFFIX : esType + ES_TYPE_EVENT_SUFFIX);
+                    addRequest(client, requestQueue, EventProcessor.handle(mapSource));
+                    continue;
+                } else if (!xyCoordinateInfo.isEmpty()) {
+                    mapSource.put(TYPE, esType.isEmpty() ? trackId + ES_TYPE_XY_SUFFIX : esType + ES_TYPE_XY_SUFFIX);
+                    addRequest(client, requestQueue, CoordinateProcessor.handle(mapSource));
+                    continue;
+                } else if (!promotionUrlInfo.isEmpty()) {
+                    if (!mapSource.get(CURR_ADDRESS).toString().contains(SEM_KEYWORD_IDENTIFIER))
+                        continue;
+                    mapSource.put(TYPE, esType.isEmpty() ? trackId + ES_TYPE_PROMOTION_URL_SUFFIX : esType + ES_TYPE_PROMOTION_URL_SUFFIX);
+                    addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
+                    continue;
+                }
+
+                mapSource.put(TYPE, esType.isEmpty() ? trackId : esType);
 
                 // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                 int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
@@ -86,10 +122,6 @@ public class EsForward implements Constants {
                     mapSource.put(ENTRANCE, 0);
                 }
 
-
-                String trackId = mapSource.get(T).toString();
-                String tt = mapSource.get(TT).toString();   // 访问次数标识符
-                mapSource.put(TT, tt);
 
                 try {
                     String refer = mapSource.get(RF).toString();
@@ -136,19 +168,6 @@ public class EsForward implements Constants {
                     e.printStackTrace();
                 }
 
-                // 事件跟踪处理
-                String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
-                if (!eventInfo.isEmpty()) {
-                    String[] eventArr = mapSource.get(ET).toString().split("\\*");
-                    Map<String, Object> etJsonMap = new HashMap<>();
-                    etJsonMap.put(ET_CATEGORY, eventArr[0]);
-                    etJsonMap.put(ET_ACTION, eventArr[1]);
-                    etJsonMap.put(ET_LABEL, eventArr[2]);
-                    etJsonMap.put(ET_VALUE, eventArr.length == 3 ? EMPTY_STRING : eventArr[3]);
-                    mapSource.put(ET, JSON.toJSONString(etJsonMap));
-                    mapSource.put(ENTRANCE, -1);
-                }
-
 //                LocalDate localDate = LocalDate.now();
 //                Map<String, Object> tmpMapSource = new HashMap<>(mapSource);
 //                try {
@@ -162,11 +181,8 @@ public class EsForward implements Constants {
 //                }
 
 //                Map<String, Object> doc = visitorExists(client.prepareSearch(), VISITOR_PREFIX + localDate.toString(), trackId, tt);
-                IndexRequestBuilder builder = client.prepareIndex();
-                builder.setIndex(ACCESS_PREFIX + LocalDate.now().toString());
-                builder.setType(trackId);
-                builder.setSource(mapSource);
-                requestQueue.add(builder.request());
+
+                addRequest(client, requestQueue, mapSource);
 
 
 //                String eventAttr = mapSource.getOrDefault(ET, "").toString();
@@ -273,6 +289,14 @@ public class EsForward implements Constants {
         if (responses.hasFailures()) {
             System.out.println("Failure: " + responses.buildFailureMessage());
         }
+    }
+
+    private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
+        IndexRequestBuilder builder = client.prepareIndex();
+        builder.setIndex(source.remove(INDEX).toString());
+        builder.setType(source.remove(TYPE).toString());
+        builder.setSource(source);
+        requestQueue.add(builder.request());
     }
 
 }
