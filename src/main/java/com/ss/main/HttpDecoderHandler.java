@@ -63,14 +63,11 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                         else
                             source.put(k, v.get(0));
                     });
-                    mo.add(UNIX_TIME, source.getOrDefault(DT, System.currentTimeMillis()));
 
+                    source.put(UNIX_TIME, source.remove(DT));
                     source.remove(REFERRER);
                     if (source.containsKey(REAL_IP))
                         source.remove(REAL_IP);
-
-                    if (source.containsKey(DT))
-                        source.remove(DT);
 
                     cookies = handleCookies(req);
                     cookies.stream()
