@@ -86,7 +86,7 @@ public interface Constants {
     String SEM_ADGROUP_ID = "adgroupId";
     String SEM_ADGROUP_NAME = "adgroupName";
     String SEM_KEYWORD_NAME = "keywordName";
-    String SEM_KEYWORD_IDENTIFIER = "ca";
+    String SEM_KEYWORD_IDENTIFIER = "ca=";
 
     // Elasticsearch 推广信息的字段类型
     String ES_ACCOUNT_ID = "acid";      // 帐户id
