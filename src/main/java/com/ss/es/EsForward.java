@@ -45,7 +45,6 @@ public class EsForward implements Constants {
         queue.add(obj);
     }
 
-    @SuppressWarnings("unchecked")
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
         Thread t = new Thread(() -> {
             while (true) {
@@ -65,6 +64,8 @@ public class EsForward implements Constants {
                 try {
                     jedis = JRedisPools.getConnection();
                     esType = jedis.get(trackId);
+                    if (esType == null)
+                        esType = trackId;
                 } finally {
                     if (jedis != null) {
                         jedis.close();

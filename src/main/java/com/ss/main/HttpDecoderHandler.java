@@ -7,6 +7,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
+import org.elasticsearch.common.Strings;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -43,13 +44,12 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
                     MessageObject mo = new MessageObject();
                     mo.setHttpMessage(req);
-//                  String remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
-//
-//                  mo.method(req.getMethod().toString())
-//                         .version(req.getProtocolVersion().toString())
-//                         .remote(remote);
 
-                    mo.add(REMOTE, req.headers().get(REAL_IP));
+                    String remote = req.headers().get(REAL_IP);
+                    if (Strings.isEmpty(remote))
+                        remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
+
+                    mo.add(REMOTE, remote);
                     mo.add(METHOD, req.getMethod().toString());
                     mo.add(VERSION, req.getProtocolVersion().toString());
                     mo.add(INDEX, ACCESS_PREFIX + LocalDate.now().toString());
