@@ -39,7 +39,7 @@ class PromotionUrlProcessor implements Constants {
         utMap.put(TT, source.get(TT).toString());
         utMap.put(VID, source.get(VID).toString());
         utMap.put(CURR_ADDRESS, location);
-        utMap.put(UNIX_TIME, Long.parseLong(source.get(UNIX_TIME).toString()));
+        utMap.put(UNIX_TIME, source.get(UNIX_TIME).toString());
 
         source.clear();
         return utMap;

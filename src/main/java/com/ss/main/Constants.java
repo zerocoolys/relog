@@ -101,6 +101,5 @@ public interface Constants {
     String VAL_RF_TYPE_DIRECT = "1";
     String VAL_RF_TYPE_SE = "2";
     String VAL_RF_TYPE_OUTLINK = "3";
-    String VAL_RF_TYPE_SITES = "0";
 
 }

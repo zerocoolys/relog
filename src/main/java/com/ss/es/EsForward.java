@@ -31,12 +31,12 @@ import java.util.function.Consumer;
  */
 public class EsForward implements Constants {
 
+    private static final int ONE_DAY_SECONDS = 86_400;
+
     private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
     public EsForward(TransportClient client) {
         BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
-//        EsOperator esOperator = new EsOperator(client);
-//        preHandle(client, requestQueue, esOperator);
         preHandle(client, requestQueue);
         handleRequest(client, requestQueue);
     }
@@ -57,80 +57,74 @@ public class EsForward implements Constants {
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
-                String trackId = mapSource.get(T).toString();
-
-                String esType = EMPTY_STRING;
                 Jedis jedis = null;
                 try {
                     jedis = JRedisPools.getConnection();
-                    esType = jedis.get(trackId);
+                    String trackId = mapSource.get(T).toString();
+                    String esType = jedis.get(trackId);
                     if (esType == null)
                         esType = trackId;
-                } finally {
-                    if (jedis != null) {
-                        jedis.close();
-                    }
-                }
 
-                // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
-                String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
-                String xyCoordinateInfo = mapSource.getOrDefault(XY, EMPTY_STRING).toString();
-                String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
-                if (!eventInfo.isEmpty()) {
-                    mapSource.put(TYPE, esType.isEmpty() ? trackId + ES_TYPE_EVENT_SUFFIX : esType + ES_TYPE_EVENT_SUFFIX);
-                    addRequest(client, requestQueue, EventProcessor.handle(mapSource));
-                    continue;
-                } else if (!xyCoordinateInfo.isEmpty()) {
-                    mapSource.put(TYPE, esType.isEmpty() ? trackId + ES_TYPE_XY_SUFFIX : esType + ES_TYPE_XY_SUFFIX);
-                    addRequest(client, requestQueue, CoordinateProcessor.handle(mapSource));
-                    continue;
-                } else if (!promotionUrlInfo.isEmpty()) {
-                    if (!mapSource.get(CURR_ADDRESS).toString().contains(SEM_KEYWORD_IDENTIFIER))
+                    // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
+                    String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
+                    String xyCoordinateInfo = mapSource.getOrDefault(XY, EMPTY_STRING).toString();
+                    String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
+                    if (!eventInfo.isEmpty()) {
+                        mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
+                        addRequest(client, requestQueue, EventProcessor.handle(mapSource));
                         continue;
-                    mapSource.put(TYPE, esType.isEmpty() ? trackId + ES_TYPE_PROMOTION_URL_SUFFIX : esType + ES_TYPE_PROMOTION_URL_SUFFIX);
-                    addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
-                    continue;
-                }
-
-                mapSource.put(TYPE, esType.isEmpty() ? trackId : esType);
-
-                // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
-                int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
-                if (identifier == 1) {
-                    mapSource.put(ENTRANCE, 1);
-                    mapSource.remove(NEW_VISIT);
-                    String _location = mapSource.get(CURR_ADDRESS).toString();
-
-                    boolean hasPromotion = false;
-                    if (_location.contains(SEM_KEYWORD_IDENTIFIER)) {
-                        // keyword extract
-                        Map<String, Object> keywordInfoMap = KeywordExtractor.parse(_location);
-                        if (!keywordInfoMap.isEmpty())
-                            mapSource.putAll(keywordInfoMap);
-
-                        hasPromotion = true;
+                    } else if (!xyCoordinateInfo.isEmpty()) {
+                        mapSource.put(TYPE, esType + ES_TYPE_XY_SUFFIX);
+                        addRequest(client, requestQueue, CoordinateProcessor.handle(mapSource));
+                        continue;
+                    } else if (!promotionUrlInfo.isEmpty()) {
+                        if (!mapSource.get(CURR_ADDRESS).toString().contains(SEM_KEYWORD_IDENTIFIER))
+                            continue;
+                        mapSource.put(TYPE, esType + ES_TYPE_PROMOTION_URL_SUFFIX);
+                        addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
+                        continue;
                     }
+                    mapSource.put(TYPE, esType);
 
-                    try {
+                    // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
+                    int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
+                    if (identifier == 1) {
+                        mapSource.put(ENTRANCE, 1);
+                        mapSource.remove(NEW_VISIT);
+                        String _location = mapSource.get(CURR_ADDRESS).toString();
+
+                        boolean hasPromotion = false;
+                        if (_location.contains(SEM_KEYWORD_IDENTIFIER)) {
+                            // keyword extract
+                            Map<String, Object> keywordInfoMap = KeywordExtractor.parse(_location);
+                            if (!keywordInfoMap.isEmpty())
+                                mapSource.putAll(keywordInfoMap);
+
+                            hasPromotion = true;
+                        }
+
                         URL url = new URL(_location);
                         _location = url.getProtocol() + DOUBLE_SLASH + url.getHost().split("/")[0];
                         mapSource.put(CURR_ADDRESS, _location);
                         mapSource.put(DESTINATION_URL, hasPromotion ? _location : PLACEHOLDER);
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
+                    } else {
+                        mapSource.put(ENTRANCE, 0);
                     }
-                } else {
-                    mapSource.put(ENTRANCE, 0);
-                }
 
-
-                try {
-                    String refer = mapSource.get(RF).toString();
                     // 来源类型解析
+                    String refer = mapSource.get(RF).toString();
+                    String tt = mapSource.get(TT).toString();
+                    String rf_type = null;
                     if (PLACEHOLDER.equals(refer)) {  // 直接访问
                         mapSource.put(SE, PLACEHOLDER);
                         mapSource.put(KW, PLACEHOLDER);
-                        mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
+                        rf_type = jedis.get(tt);
+                        if (rf_type == null) {
+                            mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
+                            jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_DIRECT);
+                        } else
+                            mapSource.put(RF_TYPE, rf_type);
+
                         mapSource.put(DOMAIN, PLACEHOLDER);
                     } else {
                         List<String> skList = Lists.newArrayList();
@@ -141,14 +135,19 @@ public class EsForward implements Constants {
                         if (found) {
                             mapSource.put(SE, skList.remove(0));
                             mapSource.put(KW, skList.remove(0));
-                            mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
+                            rf_type = jedis.get(tt);
+                            if (rf_type == null) {
+                                mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
+                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_SE);
+                            } else
+                                mapSource.put(RF_TYPE, rf_type);
                         } else {
-                            String rfHost = url.getHost();
-                            URL currLocUrl = new URL(mapSource.get(CURR_ADDRESS).toString());
-                            if (rfHost.equals(currLocUrl.getHost()))
-                                mapSource.put(RF_TYPE, VAL_RF_TYPE_SITES);
-                            else
+                            rf_type = jedis.get(tt);
+                            if (rf_type == null) {
                                 mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
+                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_OUTLINK);
+                            } else
+                                mapSource.put(RF_TYPE, rf_type);
                         }
                     }
 
@@ -161,89 +160,18 @@ public class EsForward implements Constants {
 
                     final AtomicInteger integer = new AtomicInteger(0);
                     Consumer<String> pathConsumer = (String c) -> pathMap.put(HTTP_PATH + (integer.getAndIncrement()), c);
-
                     Arrays.asList(location.split("/")).stream().filter((p) -> !p.isEmpty() || !p.startsWith(HTTP_PREFIX)).forEach(pathConsumer);
-
                     mapSource.put(PATHS, pathMap);
+
+                    addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
+                } finally {
+                    if (jedis != null) {
+                        jedis.close();
+                    }
                 }
 
-//                LocalDate localDate = LocalDate.now();
-//                Map<String, Object> tmpMapSource = new HashMap<>(mapSource);
-//                try {
-//                    String _loc = tmpMapSource.get(CURR_ADDRESS).toString();
-//                    if (_loc.contains(SEM_KEYWORD_IDENTIFIER)) {
-//                        URL url = new URL(_loc);
-//                        tmpMapSource.put(CURR_ADDRESS, url.getProtocol() + "://" + url.getHost());
-//                    }
-//                } catch (MalformedURLException e) {
-//                    e.printStackTrace();
-//                }
-
-//                Map<String, Object> doc = visitorExists(client.prepareSearch(), VISITOR_PREFIX + localDate.toString(), trackId, tt);
-
-                addRequest(client, requestQueue, mapSource);
-
-
-//                String eventAttr = mapSource.getOrDefault(ET, "").toString();
-//                Map<String, String> eventMap = new LinkedHashMap<>();
-//
-//                if (eventAttr.isEmpty()) {
-//                    if (doc.isEmpty())  // 入口页面
-//                        tmpMapSource.put(ENTRANCE, 1);
-//                    else
-//                        tmpMapSource.put(ENTRANCE, 0);
-//
-//                    builder.setSource(tmpMapSource);
-//                    requestQueue.add(builder.request());
-//                } else {
-//                    String[] eventArr = eventAttr.split("\\*");
-//                    eventMap.put(ET_CATEGORY, eventArr[0]);
-//                    eventMap.put(ET_ACTION, eventArr[1]);
-//                    eventMap.put(ET_LABEL, eventArr[2]);
-//                    eventMap.put(ET_VALUE, eventArr.length == 3 ? "" : eventArr[3]);
-//                }
-//
-//                mapSource.remove(PATHS);
-//                if (doc.isEmpty()) {    // 一次新的访问
-//                    builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
-//
-//                    Set<String> currAddress = Sets.newHashSet(mapSource.remove(CURR_ADDRESS).toString());
-//                    Set<Long> utime = Sets.newHashSet(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));
-//                    mapSource.put(CURR_ADDRESS, currAddress.toArray(new String[currAddress.size()]));
-//                    mapSource.put(UNIX_TIME, utime.toArray(new Long[utime.size()]));
-//                    builder.setSource(mapSource);
-//
-//                    if (!eventMap.isEmpty()) {
-//                        List<Map<String, String>> events = new ArrayList<>();
-//                        events.add(eventMap);
-//                        mapSource.put(ET, events);
-//                    }
-//
-//                    esOperator.pushIndexRequest(mapSource);
-//                } else {    // 同一次访问
-//                    builder = client.prepareIndex(VISITOR_PREFIX + localDate.toString(), trackId);
-//
-//                    List<String> currAddress = (ArrayList<String>) doc.get(CURR_ADDRESS);
-//                    List<Long> utime = (ArrayList<Long>) doc.get(UNIX_TIME);
-//
-//                    if (doc.containsKey(ET) && !eventMap.isEmpty()) {
-//                        List<Map<String, String>> events = (ArrayList) doc.get(ET);
-//                        events.add((eventMap));
-//                        doc.put(ET, events);
-//                    } else if (!doc.containsKey(ET) && !eventMap.isEmpty()) {
-//                        List<Map<String, String>> events = new ArrayList<>();
-//                        events.add(eventMap);
-//                        doc.put(ET, events);
-//                    }
-//
-//                    currAddress.add(mapSource.remove(CURR_ADDRESS).toString());
-//                    utime.add(Long.valueOf(mapSource.remove(UNIX_TIME).toString()));
-//                    mapSource.put(CURR_ADDRESS, currAddress.toArray(new String[currAddress.size()]));
-//                    mapSource.put(UNIX_TIME, utime.toArray(new Long[utime.size()]));
-//                    esOperator.pushUpdateRequest(doc);
-//                }
             }
 
         });
