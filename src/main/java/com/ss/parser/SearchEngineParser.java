@@ -36,27 +36,27 @@ public class SearchEngineParser implements Constants {
                 sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
                 Map<String, List<String>> paramsMap = decoder.parameters();
                 if (paramsMap.get("wd") == null)
-                    sk[1] = paramsMap.get("word").get(0);
+                    sk[1] = paramsMap.get("word").get(0).trim();
                 else
-                    sk[1] = paramsMap.get("wd").get(0);
+                    sk[1] = paramsMap.get("wd").get(0).trim();
             } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey()))) {
                 sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
-                sk[1] = decoder.parameters().get("query").get(0);
+                sk[1] = decoder.parameters().get("query").get(0).trim();
             } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey()))) {
                 sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
-                sk[1] = decoder.parameters().get("q").get(0);
+                sk[1] = decoder.parameters().get("q").get(0).trim();
             } else if (refer.startsWith(bundle.getString(TypeEnum.BING.getKey()))) {
                 sk[0] = TypeEnum.BING.getName(TypeEnum.BING.getKey());
-                sk[1] = decoder.parameters().get("q").get(0);
+                sk[1] = decoder.parameters().get("q").get(0).trim();
             } else if (refer.startsWith(bundle.getString(TypeEnum.BAIDU.getKey() + "_m"))) {
                 sk[0] = TypeEnum.BAIDU.getName(TypeEnum.BAIDU.getKey());
-                sk[1] = decoder.parameters().get("word").get(0);
+                sk[1] = decoder.parameters().get("word").get(0).trim();
             } else if (refer.startsWith(bundle.getString(TypeEnum.SOUGOU.getKey() + "_m"))) {
                 sk[0] = TypeEnum.SOUGOU.getName(TypeEnum.SOUGOU.getKey());
-                sk[1] = decoder.parameters().get("keyword").get(0);
+                sk[1] = decoder.parameters().get("keyword").get(0).trim();
             } else if (refer.startsWith(bundle.getString(TypeEnum.HAOSOU.getKey() + "_m"))) {
                 sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
-                sk[1] = decoder.parameters().get("q").get(0);
+                sk[1] = decoder.parameters().get("q").get(0).trim();
             }
         } catch (NullPointerException e) {
 //            sk[0] = PLACEHOLDER;
