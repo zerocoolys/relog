@@ -1,6 +1,5 @@
 package com.ss.redis;
 
-import com.ss.main.Constants;
 import com.ss.main.RelogConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -9,10 +8,12 @@ import redis.clients.jedis.Protocol;
 
 import java.util.ResourceBundle;
 
+import static com.ss.main.Constants.DEV_MODE;
+
 /**
  * Created by dolphineor on 2015-03-17.
  */
-public class JRedisPools implements Constants {
+public class JRedisPools {
 
     private static JedisPool jedisPool;
 
@@ -45,15 +46,19 @@ public class JRedisPools implements Constants {
                 .getString("redis.pool.testOnReturn")));
 
         String hostName = bundle.getString("redis.hostName");
-        if (DEV_MODE.equals(RelogConfig.getMode()))
+        String portStr = bundle.getString("redis.port");
+        String password = bundle.getString("redis.password");
+        if (DEV_MODE.equals(RelogConfig.getMode())) {
             hostName = hostName.split(";")[0];
-        else
+            portStr = portStr.split(";")[0];
+            password = password.split(";")[0];
+        } else {
             hostName = hostName.split(";")[1];
+            portStr = portStr.split(";")[1];
+            password = password.split(";")[1];
+        }
 
-        jedisPool = new JedisPool(config, hostName,
-                Integer.valueOf(bundle.getString("redis.port")),
-                Protocol.DEFAULT_TIMEOUT,
-                bundle.getString("redis.password"));
+        jedisPool = new JedisPool(config, hostName, Integer.valueOf(portStr), Protocol.DEFAULT_TIMEOUT, password);
     }
 
 
