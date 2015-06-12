@@ -8,10 +8,15 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 import java.util.*;
 
+import static com.ss.main.Constants.DEV_MODE;
+import static com.ss.main.Constants.PROD_MODE;
+
 /**
  * Created by dolphineor on 2015-3-20.
  */
 public class EsPools {
+
+    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("elasticsearch");
 
     private static int bulkRequestNumber;
 
@@ -26,24 +31,17 @@ public class EsPools {
         if (clients.isEmpty()) {
             synchronized (EsPools.class) {
                 if (clients.isEmpty()) {
-                    ResourceBundle bundle = null;
-
+                    String[] hosts = BUNDLE.getString("es.host").split(";");
+                    String[] clusters = BUNDLE.getString("es.cluster").split(";");
                     switch (RelogConfig.getMode()) {
-                        case "dev":
-                            bundle = ResourceBundle.getBundle("esDev");
+                        case DEV_MODE:
+                            clients.addAll(initEsClient(hosts[0], clusters[0]));
                             break;
-                        case "prod":
-                            bundle = ResourceBundle.getBundle("esProd");
+                        case PROD_MODE:
+                            clients.addAll(initEsClient(hosts[1], clusters[1]));
                             break;
                         default:
                             break;
-                    }
-
-                    if (bundle != null) {
-                        String hosts = bundle.getString("es.host");
-                        String cluster = bundle.getString("es.cluster");
-
-                        clients.addAll(initEsClient(hosts, cluster));
                     }
                 }
             }
@@ -52,21 +50,21 @@ public class EsPools {
         return clients;
     }
 
-    private static List<TransportClient> initEsClient(String hosts, String cluster) {
+    private static List<TransportClient> initEsClient(String host, String cluster) {
         List<TransportClient> clients = new ArrayList<>();
         try {
-            String[] hostArr = hosts.split(";");
-            String[] clusters = cluster.split(";");
+            String[] hostArr = host.split("|");
+            String[] clusterArr = cluster.split("|");
             for (int i = 0, l = hostArr.length; i < l; i++) {
                 List<InetSocketTransportAddress> addressList = new ArrayList<>();
-                for (String host : hostArr[i].split(",")) {
-                    String[] arr = host.split(":");
+                for (String _host : hostArr[i].split(",")) {
+                    String[] arr = _host.split(":");
                     if (arr.length == 1)
                         addressList.add(new InetSocketTransportAddress(arr[0], 9300));
                     else if (arr.length == 2)
                         addressList.add(new InetSocketTransportAddress(arr[0], Integer.valueOf(arr[1])));
                 }
-                String clusterName = clusters[i];
+                String clusterName = clusterArr[i];
 
                 Settings settings = ImmutableSettings.settingsBuilder().put(esMap)
                         .put("cluster.name", clusterName)
