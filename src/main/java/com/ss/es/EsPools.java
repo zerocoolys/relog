@@ -53,8 +53,8 @@ public class EsPools {
     private static List<TransportClient> initEsClient(String host, String cluster) {
         List<TransportClient> clients = new ArrayList<>();
         try {
-            String[] hostArr = host.split("|");
-            String[] clusterArr = cluster.split("|");
+            String[] hostArr = host.split("\\|");
+            String[] clusterArr = cluster.split("\\|");
             for (int i = 0, l = hostArr.length; i < l; i++) {
                 List<InetSocketTransportAddress> addressList = new ArrayList<>();
                 for (String _host : hostArr[i].split(",")) {
