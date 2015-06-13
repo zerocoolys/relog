@@ -3,6 +3,13 @@ mode=prod
 topic=relog
 port=20001
 
+BASE_DIR=`dirname $0`
+JAVA_HOME=`${JAVA_HOME}`
+if [${JAVA_HOME} == ""]
+    then
+        JAVA_HOME=/usr/local/jdk/jdk1.8.0_45
+fi
+
 while getopts "m:p:t:" arg
     do
         case $arg in
@@ -21,4 +28,4 @@ while getopts "m:p:t:" arg
         esac
     done
 
-java -Xms2g -Xmx2g -cp .:./lib/*:./conf com.ss.main.RelogProducerMain ${mode} ${topic} ${port}
+${JAVA_HOME}/bin/java -Xms2g -Xmx2g -cp ${BASE_DIR}:${BASE_DIR}/lib/*:${BASE_DIR}/conf com.ss.main.RelogProducerMain ${mode} ${topic} ${port}
