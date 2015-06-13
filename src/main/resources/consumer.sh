@@ -4,6 +4,13 @@ bulk=1000
 topic=relog
 consumerThreadNumber=4
 
+BASE_DIR=`dirname $0`
+JAVA_HOME=`${JAVA_HOME}`
+if [${JAVA_HOME} == ""]
+    then
+        JAVA_HOME=/usr/local/jdk/jdk1.8.0_45
+fi
+
 while getopts "m:b:t:n:" arg
     do
         case $arg in
@@ -25,4 +32,4 @@ while getopts "m:b:t:n:" arg
         esac
     done
 
-java -Xms2g -Xmx2g -cp .:./lib/*:./conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}
+${JAVA_HOME}/bin/java -Xms2g -Xmx2g -cp ${BASE_DIR}:${BASE_DIR}/lib/*:${BASE_DIR}/conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}
