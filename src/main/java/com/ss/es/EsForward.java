@@ -11,6 +11,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.common.lang3.StringUtils;
 import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
@@ -51,6 +52,9 @@ public class EsForward implements Constants {
                 Map<String, Object> mapSource = null;
                 try {
                     mapSource = queue.take();
+
+
+                    System.out.println("mapSource = " + mapSource);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -62,9 +66,12 @@ public class EsForward implements Constants {
                     jedis = JRedisPools.getConnection();
                     String trackId = mapSource.get(T).toString();
                     String esType = jedis.get(trackId);
-                    if (esType == null)
-                        esType = trackId;
 
+                    if(StringUtils.isEmpty(esType)){
+                        esType = "1";
+                    }
+
+                    System.out.println("esType = " + esType);
                     // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
                     String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
                     String xyCoordinateInfo = mapSource.getOrDefault(XY, EMPTY_STRING).toString();
@@ -72,20 +79,24 @@ public class EsForward implements Constants {
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
                         addRequest(client, requestQueue, EventProcessor.handle(mapSource));
+                        System.out.println("Envent===========");
                         continue;
                     } else if (!xyCoordinateInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_XY_SUFFIX);
                         addRequest(client, requestQueue, CoordinateProcessor.handle(mapSource));
+                        System.out.println("XY00000000000000000");
                         continue;
                     } else if (!promotionUrlInfo.isEmpty()) {
                         if (!mapSource.get(CURR_ADDRESS).toString().contains(SEM_KEYWORD_IDENTIFIER))
                             continue;
+                        System.out.println("URL555555555555555555555555");
                         mapSource.put(TYPE, esType + ES_TYPE_PROMOTION_URL_SUFFIX);
                         addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
                         continue;
                     }
                     mapSource.put(TYPE, esType);
 
+                    System.out.println("--------------------");
                     // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                     int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
                     if (identifier == 1) {
@@ -110,6 +121,8 @@ public class EsForward implements Constants {
                     } else {
                         mapSource.put(ENTRANCE, 0);
                     }
+
+                    System.out.println("来源类型11111111111111111111");
 
                     // 来源类型解析
                     String refer = mapSource.get(RF).toString();
@@ -151,6 +164,7 @@ public class EsForward implements Constants {
                         }
                     }
 
+                    System.out.println("访问URL********************");
                     // 访问URL路径解析
                     String location = UrlUtils.removeProtocol(mapSource.get(CURR_ADDRESS).toString());
                     if (location.contains(QUESTION_MARK))
@@ -162,6 +176,8 @@ public class EsForward implements Constants {
                     Consumer<String> pathConsumer = (String c) -> pathMap.put(HTTP_PATH + (integer.getAndIncrement()), c);
                     Arrays.asList(location.split("/")).stream().filter((p) -> !p.isEmpty() || !p.startsWith(HTTP_PREFIX)).forEach(pathConsumer);
                     mapSource.put(PATHS, pathMap);
+
+                    System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
 
                     addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
@@ -188,6 +204,8 @@ public class EsForward implements Constants {
                 IndexRequest request = null;
                 try {
                     request = requestQueue.take();
+                    System.out.println("\"handleRequest\" = " + "handleRequest");
+
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -221,6 +239,9 @@ public class EsForward implements Constants {
     }
 
     private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
+
+
+        System.out.println("addRequest()");
         IndexRequestBuilder builder = client.prepareIndex();
         builder.setIndex(source.remove(INDEX).toString());
         builder.setType(source.remove(TYPE).toString());
