@@ -39,7 +39,9 @@ public class LogConsumer implements Runnable, Constants {
                 jedis = JRedisPools.getConnection();
                 byte[] msg = it.next().message();
                 Map<String, Object> mapSource = (Map<String, Object>) JSON.parse(new String(msg));
+                System.out.println("Read from kafka server");
                 String remoteIp = mapSource.get(REMOTE).toString().split(":")[0];
+                System.out.println("parse ip...................");
                 String ipInfo = jedis.hget(IP_AREA_INFO, remoteIp);
                 Map<String, String> ipMap;
                 if (ipInfo == null) {
@@ -50,6 +52,8 @@ public class LogConsumer implements Runnable, Constants {
 
                 if (ipMap != null) {
                     ipMap.forEach(mapSource::put);
+
+                    System.out.println("MapSoruce:======" + mapSource);
 
                     for (EsForward esForward : forwards)
                         esForward.add(Maps.newHashMap(mapSource));
