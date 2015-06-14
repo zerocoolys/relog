@@ -57,6 +57,7 @@ public class EsForward implements Constants {
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
+                System.out.println("Received message, location= " + mapSource.get(CURR_ADDRESS));
                 Jedis jedis = null;
                 try {
                     jedis = JRedisPools.getConnection();
