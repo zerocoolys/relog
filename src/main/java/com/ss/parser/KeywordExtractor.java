@@ -26,7 +26,7 @@ public class KeywordExtractor implements Constants {
             URL url = new URL(urlStr);
             String domain = url.getHost().replace(WWW_PREFIX, EMPTY_STRING);
             QueryStringDecoder decoder = new QueryStringDecoder(urlStr);
-            String transferId = decoder.parameters().get(SEM_KEYWORD_IDENTIFIER).get(0);
+            String transferId = decoder.parameters().get(SEM_KEYWORD_IDENTIFIER.replace("=", EMPTY_STRING)).get(0);
             StringBuilder stringBuilder = new StringBuilder();
             for (String s : transferId.split(EMPTY_STRING)) {
                 stringBuilder.append(9 - Integer.valueOf(s));
