@@ -61,7 +61,7 @@ public class EsForward implements Constants {
                 try {
                     jedis = JRedisPools.getConnection();
                     String trackId = mapSource.get(T).toString();
-                    String esType = jedis.get(trackId);
+                    String esType = jedis.get(TYPE_ID_PREFIX + trackId);
                     if (esType == null)
                         continue;
                     System.out.println("Received message, location= " + mapSource.get(CURR_ADDRESS));
