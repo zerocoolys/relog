@@ -3,6 +3,7 @@ package com.ss.parser;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ss.main.Constants;
+import com.ss.main.RelogConfig;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
 import java.io.BufferedReader;
@@ -34,7 +35,8 @@ public class KeywordExtractor implements Constants {
 
             Map<String, Object> infoMap = new HashMap<>();
 
-            HttpURLConnection conn = (HttpURLConnection) new URL(String.format(KEYWORD_INFO_REQUEST_URL, domain, keywordId)).openConnection();
+            String kwInfoReqUrl = RelogConfig.getKwInfoReqUrl();
+            HttpURLConnection conn = (HttpURLConnection) new URL(String.format(kwInfoReqUrl, domain, keywordId)).openConnection();
             String chartSet = StandardCharsets.UTF_8.name();
             conn.setRequestProperty("Charset", chartSet);
             conn.setUseCaches(false);

@@ -79,7 +79,6 @@ public interface Constants {
     String ET_LABEL = "et_label";      // 事件的额外信息
     String ET_VALUE = "et_value";      // 事件的额外数值信息
 
-    String KEYWORD_INFO_REQUEST_URL = "http://182.92.227.79:9080/user/%s/keyword/%s";
     String SEM_ACCOUNT_ID = "accountId";
     String SEM_CAMPAIGN_ID = "campaignId";
     String SEM_CAMPAIGN_NAME = "campaignName";
