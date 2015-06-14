@@ -18,6 +18,7 @@ public class RelogConsumerMain {
         RelogConfig.setKafkaTopic(args[1]);
         EsPools.setBulkRequestNumber(Integer.parseInt(args[2]));
         int consumerThreadNumber = Integer.valueOf(args[3]);
+        RelogConfig.setKwInfoReqUrl(args[4]);
 
         List<TransportClient> esClients = new ArrayList<>();
         List<EsForward> esForwards = new ArrayList<>();
