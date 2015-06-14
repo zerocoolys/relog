@@ -57,14 +57,14 @@ public class EsForward implements Constants {
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
-                System.out.println("Received message, location= " + mapSource.get(CURR_ADDRESS));
                 Jedis jedis = null;
                 try {
                     jedis = JRedisPools.getConnection();
                     String trackId = mapSource.get(T).toString();
                     String esType = jedis.get(trackId);
                     if (esType == null)
-                        esType = trackId;
+                        continue;
+                    System.out.println("Received message, location= " + mapSource.get(CURR_ADDRESS));
 
                     // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
                     String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
