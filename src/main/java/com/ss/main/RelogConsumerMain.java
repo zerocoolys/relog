@@ -15,7 +15,7 @@ public class RelogConsumerMain {
 
     public static void main(String[] args) {
         RelogConfig.setMode(args[0]);
-        RelogConfig.setKafkaTopic(args[1]);
+        RelogConfig.setTopic(args[1]);
         EsPools.setBulkRequestNumber(Integer.parseInt(args[2]));
         int consumerThreadNumber = Integer.valueOf(args[3]);
         RelogConfig.setKwInfoReqUrl(args[4]);
@@ -27,9 +27,10 @@ public class RelogConsumerMain {
             esForwards.add(new EsForward(client));
         });
 
-        new HLConsumerGroup(RelogConfig.getKafkaTopic(), consumerThreadNumber, esForwards);
+        HLConsumerGroup consumerGroup = new HLConsumerGroup(RelogConfig.getTopic(), consumerThreadNumber, esForwards);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            consumerGroup.shutdown();
             esClients.forEach(TransportClient::close);
         }));
 

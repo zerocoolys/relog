@@ -5,19 +5,19 @@ package com.ss.monitor;
  */
 public interface Monitor {
 
-    public void data_ready();
+    void data_ready();
 
-    public void success_http();
+    void success_http();
 
-    public void mq_send();
+    void mq_send();
 
-    public void mq_receive();
+    void mq_receive();
 
-    public void failed_mq(int num);
+    void failed_mq(int num);
 
-    public void es_forwarded();
+    void es_forwarded();
 
-    public void failed_es(int num);
+    void failed_es(int num);
 
     void data_error();
 

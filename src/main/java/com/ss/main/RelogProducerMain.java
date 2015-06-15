@@ -17,7 +17,7 @@ public class RelogProducerMain {
 
         // initialize config
         RelogConfig.setMode(args[0]);
-        RelogConfig.setKafkaTopic(args[1]);
+        RelogConfig.setTopic(args[1]);
         int port = Integer.parseInt(args[2]);
 
         ServerBootstrap bootstrap = new ServerBootstrap();

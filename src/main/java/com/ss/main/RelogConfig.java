@@ -6,7 +6,8 @@ package com.ss.main;
 public class RelogConfig {
 
     private static String mode;
-    private static String kafkaTopic;
+    private static String topic;
+    private static String groupId;
     private static String kwInfoReqUrl;
 
     public static String getMode() {
@@ -17,12 +18,20 @@ public class RelogConfig {
         RelogConfig.mode = mode;
     }
 
-    public static String getKafkaTopic() {
-        return kafkaTopic;
+    public static String getTopic() {
+        return topic;
     }
 
-    public static void setKafkaTopic(String kafkaTopic) {
-        RelogConfig.kafkaTopic = kafkaTopic;
+    public static void setTopic(String topic) {
+        RelogConfig.topic = topic;
+    }
+
+    public static String getGroupId() {
+        return groupId;
+    }
+
+    public static void setGroupId(String groupId) {
+        RelogConfig.groupId = groupId;
     }
 
     public static String getKwInfoReqUrl() {
