@@ -2,7 +2,7 @@
 mode=prod
 bulk=1000
 topic=relog
-consumerThreadNumber=4
+consumerThreadNumber=8
 semReqHost=127.0.0.1:8080
 
 BASE_DIR=`dirname $0`
