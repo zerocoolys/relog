@@ -16,7 +16,7 @@ public class MonitorService {
     }
 
     public MonitorService(Monitor monitor) {
-        this.monitor = monitor;
+        MonitorService.monitor = monitor;
     }
 
 

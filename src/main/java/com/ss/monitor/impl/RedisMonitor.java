@@ -9,22 +9,18 @@ import redis.clients.jedis.Jedis;
  */
 public class RedisMonitor implements Monitor {
 
-    public static final String PREFIX = "RELOG:";
-    public static final String MQ_KEY_SUC = "RELOG_KAFKA_MQ_SUCCESS";
+    private static final String PREFIX = "RELOG:";
 
-    public static final String HTTP_RECEIVED = "HTTP_RECEIVED-1"; //1
+    private static final String HTTP_RECEIVED = "HTTP_RECEIVED-1"; //1
     private static final String MQ_KEY_SEND = "MQ_KEY_SEND-2";//2
     private static final String MQ_KEY_RECEIVE = "MQ_KEY_RECEIVE-3";//3
-    public static final String ES_FORWARDED = "ES_FORWARDED-4";//4
-    public static final String DATA_READY = "DATA_READY-5";//5
+    private static final String ES_FORWARDED = "ES_FORWARDED-4";//4
+    private static final String DATA_READY = "DATA_READY-5";//5
     private static final String ES_DATA_READY = "ES_DATA_READY-6";//6
     private static final String ES_DATA_SAVED = "ES_DATA_SAVED-7";//7
 
-
-    public static final String ES_KEY_SUC = "RELOG_ES_SUCCESS";
-
-    public static final String MQ_KEY_FAILED = "RELOG_KAFKA_MQ_FAILED";
-    public static final String ES_KEY_FAILED = "RELOG_ES_FAILED";
+    private static final String MQ_KEY_FAILED = "RELOG_KAFKA_MQ_FAILED";
+    private static final String ES_KEY_FAILED = "RELOG_ES_FAILED";
     private static final String DATA_ERROR = "DATA_ERROR";
     private static final String ES_DATA_ERROR = "ES_DATA_ERROR";
 

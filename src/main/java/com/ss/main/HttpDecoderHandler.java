@@ -77,7 +77,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                             .filter(c -> VID.equals(c.getName()) || UCV.equals(c.getName()))
                             .forEach(cookie -> source.put(cookie.getName(), cookie.getValue()));
                     // send message
-                    LogProducer producer = new LogProducer(RelogConfig.getKafkaTopic());
+                    LogProducer producer = new LogProducer(RelogConfig.getTopic());
                     producer.handleMessage(JSON.toJSONString(source));
                     producer.close();
 
