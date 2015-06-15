@@ -1,6 +1,7 @@
 package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
+import com.ss.monitor.MonitorService;
 import com.ss.mq.producer.LogProducer;
 import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
@@ -32,6 +33,8 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
     private void messageReceived(ChannelHandlerContext ctx, HttpObject msg) {
         if (msg instanceof HttpRequest) {
+            MonitorService.getService().success_http();
+            
             HttpRequest req = this.request = (HttpRequest) msg;
 
             // req.getUri().contains("?t="); 判断是否包含track id

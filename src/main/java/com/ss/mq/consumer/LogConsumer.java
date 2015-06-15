@@ -3,6 +3,7 @@ package com.ss.mq.consumer;
 import com.alibaba.fastjson.JSON;
 import com.ss.es.EsForward;
 import com.ss.main.Constants;
+import com.ss.monitor.MonitorService;
 import com.ss.parser.IPParser;
 import com.ss.redis.JRedisPools;
 import kafka.consumer.ConsumerIterator;
@@ -33,6 +34,7 @@ public class LogConsumer implements Runnable, Constants {
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
+        MonitorService.getService().mq_receive();
         for (ConsumerIterator<byte[], byte[]> it = m_stream.iterator(); it.hasNext(); ) {
             Jedis jedis = null;
             try {
@@ -51,8 +53,10 @@ public class LogConsumer implements Runnable, Constants {
                 if (ipMap != null) {
                     ipMap.forEach(mapSource::put);
 
-                    for (EsForward esForward : forwards)
+                    for (EsForward esForward : forwards) {
                         esForward.add(Maps.newHashMap(mapSource));
+                        MonitorService.getService().es_forwarded();
+                    }
                 }
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();

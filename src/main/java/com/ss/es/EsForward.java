@@ -1,6 +1,7 @@
 package com.ss.es;
 
 import com.ss.main.Constants;
+import com.ss.monitor.MonitorService;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
@@ -46,6 +47,7 @@ public class EsForward implements Constants {
     }
 
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+
         Thread t = new Thread(() -> {
             while (true) {
                 Map<String, Object> mapSource = null;
@@ -60,11 +62,11 @@ public class EsForward implements Constants {
                 Jedis jedis = null;
                 try {
                     jedis = JRedisPools.getConnection();
-                    String trackId = mapSource.get(T).toString();
+                    String trackId = mapSource.getOrDefault(T, "").toString();
                     String esType = jedis.get(TYPE_ID_PREFIX + trackId);
                     if (esType == null)
                         continue;
-                    System.out.println("Received message, location= " + mapSource.get(CURR_ADDRESS));
+                    MonitorService.getService().data_ready();
 
                     // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
                     String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
@@ -167,6 +169,7 @@ public class EsForward implements Constants {
                     addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
+                    MonitorService.getService().data_error();
                 } finally {
                     if (jedis != null) {
                         jedis.close();
@@ -194,7 +197,7 @@ public class EsForward implements Constants {
                 }
                 if (request == null)
                     continue;
-
+                MonitorService.getService().es_data_ready();
                 bulkRequestBuilder.add(request);
 
                 if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
@@ -218,7 +221,11 @@ public class EsForward implements Constants {
         BulkResponse responses = bulkRequestBuilder.get();
         if (responses.hasFailures()) {
             System.out.println("Failure: " + responses.buildFailureMessage());
+            MonitorService.getService().es_data_error();
+            return;
         }
+
+        MonitorService.getService().es_data_saved(responses.getItems().length);
     }
 
     private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
