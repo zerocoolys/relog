@@ -2,6 +2,7 @@ package com.ss.mq.producer;
 
 import com.ss.main.Constants;
 import com.ss.main.RelogConfig;
+import com.ss.monitor.MonitorService;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
@@ -37,6 +38,7 @@ public class LogProducer implements Constants {
     public void handleMessage(String msg) {
         KeyedMessage<String, String> data = new KeyedMessage<>(topic, RANDOM.nextInt(RANDOM_RANGE) + EMPTY_DELIMITER, msg);
         producer.send(data);
+        MonitorService.getService().mq_send();
     }
 
     public void close() {
