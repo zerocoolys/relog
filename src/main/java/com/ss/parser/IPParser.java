@@ -13,6 +13,9 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.ss.main.Constants.EMPTY_STRING;
+import static com.ss.main.Constants.PLACEHOLDER;
+
 /**
  * Created by dolphineor on 2015-3-18.
  */
@@ -40,8 +43,8 @@ public class IPParser {
             String region = jsonObject.getString(Constants.REGION);
             if (region.isEmpty()) {
                 ipInfoMap.put(Constants.REGION, "国外");
-                ipInfoMap.put(Constants.CITY, "-");
-                ipInfoMap.put(Constants.ISP, "-");
+                ipInfoMap.put(Constants.CITY, PLACEHOLDER);
+                ipInfoMap.put(Constants.ISP, PLACEHOLDER);
             } else {
                 if (IP_REGION_SUFFIX2.equals(region))
                     ipInfoMap.put(Constants.REGION, region.substring(0, 3));
@@ -49,17 +52,17 @@ public class IPParser {
                     if (region.contains(IP_REGION_SUFFIX1) || region.contains(IP_REGION_SUFFIX3))
                         ipInfoMap.put(Constants.REGION, region.substring(0, 2));
                     else
-                        ipInfoMap.put(Constants.REGION, region.replace("省", ""));
+                        ipInfoMap.put(Constants.REGION, region.replace("省", EMPTY_STRING));
                 }
 
                 if (jsonObject.getString(Constants.CITY).isEmpty())
-                    ipInfoMap.put(Constants.CITY, "-");
+                    ipInfoMap.put(Constants.CITY, PLACEHOLDER);
                 else
                     ipInfoMap.put(Constants.CITY, jsonObject.getString(Constants.CITY));
 
 
                 if (jsonObject.getString(Constants.ISP).isEmpty())
-                    ipInfoMap.put(Constants.ISP, "-");
+                    ipInfoMap.put(Constants.ISP, PLACEHOLDER);
                 else
                     ipInfoMap.put(Constants.ISP, jsonObject.getString(Constants.ISP));
 
