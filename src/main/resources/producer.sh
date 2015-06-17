@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 mode=prod
-topic=relog
+topic=huiyan_relog
 port=20001
 
 BASE_DIR=`dirname $0`
