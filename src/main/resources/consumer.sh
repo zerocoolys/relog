@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 mode=prod
 bulk=1000
-topic=relog
+topic=huiyan_relog
 consumerThreadNumber=8
 semReqHost=127.0.0.1:8080
 
