@@ -1,7 +1,6 @@
 package com.ss.mq.consumer;
 
 import com.ss.es.EsForward;
-import com.ss.main.Constants;
 import com.ss.main.RelogConfig;
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
@@ -12,12 +11,15 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.ss.main.Constants.PROD_MODE;
+import static com.ss.main.Constants.ZK_CONNECTOR;
+
 /**
  * Created by dolphineor on 2015-5-25.
  */
-public class HLConsumerGroup implements Constants {
+public class HLConsumerGroup {
 
-    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("zookeeper");
+    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("consumer");
 
     private final ConsumerConnector consumer;
     private final String topic;

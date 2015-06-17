@@ -1,6 +1,5 @@
 package com.ss.mq.producer;
 
-import com.ss.main.Constants;
 import com.ss.main.RelogConfig;
 import com.ss.monitor.MonitorService;
 import kafka.javaapi.producer.Producer;
@@ -12,13 +11,14 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.ResourceBundle;
 
+import static com.ss.main.Constants.*;
+
 /**
  * Created by dolphineor on 2015-5-25.
  */
-public class LogProducer implements Constants {
+public class LogProducer {
     private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("kafka");
     private static final Random RANDOM = new Random();
-    private static final String EMPTY_DELIMITER = "";
     private static final int RANDOM_RANGE = 100;
 
     private final Producer<String, String> producer;
@@ -36,7 +36,7 @@ public class LogProducer implements Constants {
     }
 
     public void handleMessage(String msg) {
-        KeyedMessage<String, String> data = new KeyedMessage<>(topic, RANDOM.nextInt(RANDOM_RANGE) + EMPTY_DELIMITER, msg);
+        KeyedMessage<String, String> data = new KeyedMessage<>(topic, RANDOM.nextInt(RANDOM_RANGE) + EMPTY_STRING, msg);
         producer.send(data);
         MonitorService.getService().mq_send();
     }
