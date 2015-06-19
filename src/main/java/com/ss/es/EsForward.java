@@ -59,10 +59,13 @@ public class EsForward implements Constants {
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
+                long clientTime = Long.parseLong(mapSource.remove(DT).toString());
+                mapSource.put(CLIENT_TIME, clientTime);
+
                 Jedis jedis = null;
                 try {
                     jedis = JRedisPools.getConnection();
-                    String trackId = mapSource.getOrDefault(T, "").toString();
+                    String trackId = mapSource.getOrDefault(T, EMPTY_STRING).toString();
                     String esType = jedis.get(TYPE_ID_PREFIX + trackId);
                     if (esType == null)
                         continue;
