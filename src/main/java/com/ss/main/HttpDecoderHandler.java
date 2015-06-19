@@ -7,7 +7,6 @@ import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
-import io.netty.util.CharsetUtil;
 import org.elasticsearch.common.Strings;
 
 import java.time.LocalDate;
@@ -20,8 +19,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
  * Created by yousheng on 15/3/16.
  */
 public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> implements Constants {
-
-    private final StringBuffer responseContent = new StringBuffer();
+//    private final StringBuffer responseContent = new StringBuffer();
 
     private HttpRequest request;
 
@@ -34,7 +32,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
     private void messageReceived(ChannelHandlerContext ctx, HttpObject msg) {
         if (msg instanceof HttpRequest) {
             MonitorService.getService().success_http();
-            
+
             HttpRequest req = this.request = (HttpRequest) msg;
 
             // req.getUri().contains("?t="); 判断是否包含track id
@@ -56,6 +54,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                     mo.add(METHOD, req.getMethod().toString());
                     mo.add(VERSION, req.getProtocolVersion().toString());
                     mo.add(INDEX, ACCESS_PREFIX + LocalDate.now().toString());
+                    mo.add(UNIX_TIME, System.currentTimeMillis());
 
                     source.putAll(mo.getAttribute());
                     mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));
@@ -67,7 +66,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                             source.put(k, v.get(0));
                     });
 
-                    source.put(UNIX_TIME, source.remove(DT));
                     source.remove(REFERRER);
                     if (source.containsKey(REAL_IP))
                         source.remove(REAL_IP);
@@ -91,10 +89,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
     private void writeResponse(Channel channel, Set<Cookie> cookies) {
         // Convert the response content to a ChannelBuffer.
-//        byte[] bytes = Base64.getDecoder().decode(GifParser.base64String);
-//        ByteBuf buf = copiedBuffer(bytes);
-        ByteBuf buf = copiedBuffer(responseContent.toString(), CharsetUtil.UTF_8);
-        responseContent.setLength(0);
+        ByteBuf buf = copiedBuffer(LOGO_IMG_BYTES);
 
         // Decide whether to close the connection or not.
         boolean close = request.headers().contains(CONNECTION, HttpHeaders.Values.CLOSE, true)

@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Created by dolphineor on 2015-6-9.
- * <p/>
+ * <p>
  * 事件处理器
  */
 class EventProcessor implements Constants {
