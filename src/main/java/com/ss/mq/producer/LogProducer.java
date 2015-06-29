@@ -38,7 +38,12 @@ public class LogProducer {
     public void handleMessage(String msg) {
         KeyedMessage<String, String> data = new KeyedMessage<>(topic, RANDOM.nextInt(RANDOM_RANGE) + EMPTY_STRING, msg);
         producer.send(data);
-        MonitorService.getService().mq_send();
+
+        // TEST CODE
+        if (msg.contains("t=" + TEST_TRACK_ID)) {
+            MonitorService.getService().mq_send();
+        }
+
     }
 
     public void close() {

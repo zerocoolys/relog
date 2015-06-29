@@ -1,5 +1,6 @@
 package com.ss.main;
 
+import com.ss.mq.producer.LogProducer;
 import com.ss.quartz.TimerManager;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -25,9 +26,11 @@ public class RelogProducerMain {
         NioEventLoopGroup bossGroup = new NioEventLoopGroup(2);
         NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
+        final LogProducer producer = new LogProducer(RelogConfig.getTopic());
+
         bootstrap.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new EsChannelInitializer())
+                .childHandler(new EsChannelInitializer(producer))
                 .option(ChannelOption.SO_BACKLOG, 1024);
 
         try {
@@ -41,5 +44,13 @@ public class RelogProducerMain {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                producer.close();
+            }
+        });
+
     }
 }

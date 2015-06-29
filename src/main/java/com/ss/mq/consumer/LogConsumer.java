@@ -51,11 +51,17 @@ public class LogConsumer implements Runnable, Constants {
                     ipMap = (Map<String, String>) JSON.parse(ipInfo);
 
                 if (ipMap != null) {
+
+                    // TEST CODE
+                    if (mapSource.containsKey("t=" + TEST_TRACK_ID)) {
+                        MonitorService.getService().mq_receive();
+                        MonitorService.getService().es_forwarded();
+                    }
+
                     ipMap.forEach(mapSource::put);
 
                     for (EsForward esForward : forwards) {
                         esForward.add(Maps.newHashMap(mapSource));
-                        MonitorService.getService().es_forwarded();
                     }
                 }
             } catch (IOException | NullPointerException e) {

@@ -69,7 +69,11 @@ public class EsForward implements Constants {
                     String esType = jedis.get(TYPE_ID_PREFIX + trackId);
                     if (esType == null)
                         continue;
-                    MonitorService.getService().data_ready();
+
+                    // TEST CODE
+                    if (mapSource.containsKey("t=" + TEST_TRACK_ID)) {
+                        MonitorService.getService().data_ready();
+                    }
 
                     // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
                     String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
@@ -200,7 +204,12 @@ public class EsForward implements Constants {
                 }
                 if (request == null)
                     continue;
-                MonitorService.getService().es_data_ready();
+
+                // TEST CODE
+                if (request.sourceAsMap().containsKey("t=" + TEST_TRACK_ID)) {
+                    MonitorService.getService().es_data_ready();
+                }
+
                 bulkRequestBuilder.add(request);
 
                 if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
@@ -225,10 +234,10 @@ public class EsForward implements Constants {
         if (responses.hasFailures()) {
             System.out.println("Failure: " + responses.buildFailureMessage());
             MonitorService.getService().es_data_error();
-            return;
+//            return;
         }
 
-        MonitorService.getService().es_data_saved(responses.getItems().length);
+//        MonitorService.getService().es_data_saved(responses.getItems().length);
     }
 
     private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {

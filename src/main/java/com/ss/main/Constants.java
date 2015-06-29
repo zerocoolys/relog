@@ -103,6 +103,8 @@ public interface Constants {
     String VAL_RF_TYPE_SE = "2";
     String VAL_RF_TYPE_OUTLINK = "3";
 
+    String TEST_TRACK_ID = "1234567890";
+
 
     byte[] LOGO_IMG_BYTES = new byte[]{71, 73, 70, 56, 57, 97, 20, 0, 20, 0, -26, 118, 0, -3, -3, -3, -6, -6, -6, 3,
             -81, -17, 19, -76, -16, -17, -17, -17, -42, -14, -4, -14, -14, -14, -123, -40, -9, -100, -32, -7, 5, -81,

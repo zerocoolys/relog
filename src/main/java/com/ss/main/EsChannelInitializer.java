@@ -1,5 +1,6 @@
 package com.ss.main;
 
+import com.ss.mq.producer.LogProducer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -13,6 +14,12 @@ import io.netty.handler.codec.http.HttpServerCodec;
  */
 public class EsChannelInitializer extends ChannelInitializer {
 
+    private final LogProducer producer;
+
+    public EsChannelInitializer(LogProducer producer) {
+        this.producer = producer;
+    }
+
     @Override
     protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
@@ -20,6 +27,6 @@ public class EsChannelInitializer extends ChannelInitializer {
         pipeline.addLast(new HttpRequestDecoder());
         pipeline.addLast(new HttpResponseEncoder());
         pipeline.addLast(new HttpContentCompressor());
-        pipeline.addLast(new HttpDecoderHandler());
+        pipeline.addLast(new HttpDecoderHandler(producer));
     }
 }
