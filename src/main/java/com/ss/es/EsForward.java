@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -36,6 +38,23 @@ public class EsForward implements Constants {
 
     private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
+    private final int HANDLER_WORKERS = Runtime.getRuntime().availableProcessors() * 2;
+
+    private final ExecutorService preHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, r -> {
+        PreHandlerRunnable runnable = (PreHandlerRunnable) r;
+        Thread t = new Thread(runnable);
+        t.setName("thread-relog-preHandler-" + runnable.getId());
+        return t;
+    });
+
+    private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, r -> {
+        RequestHandlerRunnable runnable = (RequestHandlerRunnable) r;
+        Thread t = new Thread(runnable);
+        t.setName("thread-relog-requestHandler-" + runnable.getId());
+        return t;
+    });
+
+
     public EsForward(TransportClient client) {
         BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
         preHandle(client, requestQueue);
@@ -47,8 +66,46 @@ public class EsForward implements Constants {
     }
 
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+        for (int i = 0; i < HANDLER_WORKERS; i++)
+            preHandlerExecutor.execute(new PreHandlerRunnable(i, client, requestQueue));
+    }
 
-        Thread t = new Thread(() -> {
+    private void handleRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+        for (int i = 0; i < HANDLER_WORKERS; i++)
+            requestHandlerExecutor.execute(new RequestHandlerRunnable(i, client, requestQueue));
+    }
+
+    private void submitRequest(BulkRequestBuilder bulkRequestBuilder) {
+        BulkResponse responses = bulkRequestBuilder.get();
+        if (responses.hasFailures()) {
+            System.out.println("Failure: " + responses.buildFailureMessage());
+            MonitorService.getService().es_data_error();
+        }
+    }
+
+    private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
+        IndexRequestBuilder builder = client.prepareIndex();
+        builder.setIndex(source.remove(INDEX).toString());
+        builder.setType(source.remove(TYPE).toString());
+        builder.setSource(source);
+        requestQueue.add(builder.request());
+    }
+
+
+    class PreHandlerRunnable implements Runnable {
+
+        private final int id;
+        private final TransportClient client;
+        private BlockingQueue<IndexRequest> requestQueue;
+
+        PreHandlerRunnable(int id, TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+            this.id = id;
+            this.client = client;
+            this.requestQueue = requestQueue;
+        }
+
+        @Override
+        public void run() {
             while (true) {
                 Map<String, Object> mapSource = null;
                 try {
@@ -71,7 +128,7 @@ public class EsForward implements Constants {
                         continue;
 
                     // TEST CODE
-                    if (mapSource.containsKey("t=" + TEST_TRACK_ID)) {
+                    if (TEST_TRACK_ID.equals(trackId)) {
                         MonitorService.getService().data_ready();
                     }
 
@@ -184,16 +241,26 @@ public class EsForward implements Constants {
                 }
 
             }
+        }
 
-        });
-
-        t.setName("request-preHandle");
-        t.start();
-
+        public int getId() {
+            return id;
+        }
     }
 
-    private void handleRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
-        Thread t = new Thread(() -> {
+    class RequestHandlerRunnable implements Runnable {
+        private final int id;
+        private final TransportClient client;
+        private BlockingQueue<IndexRequest> requestQueue;
+
+        public RequestHandlerRunnable(int id, TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+            this.id = id;
+            this.client = client;
+            this.requestQueue = requestQueue;
+        }
+
+        @Override
+        public void run() {
             BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             while (true) {
                 IndexRequest request = null;
@@ -206,7 +273,7 @@ public class EsForward implements Constants {
                     continue;
 
                 // TEST CODE
-                if (request.sourceAsMap().containsKey("t=" + TEST_TRACK_ID)) {
+                if (request.sourceAsMap().containsKey(T)) {
                     MonitorService.getService().es_data_ready();
                 }
 
@@ -224,28 +291,11 @@ public class EsForward implements Constants {
                 }
 
             }
-        });
-        t.setName("handleAccessInsert");
-        t.start();
-    }
-
-    private void submitRequest(BulkRequestBuilder bulkRequestBuilder) {
-        BulkResponse responses = bulkRequestBuilder.get();
-        if (responses.hasFailures()) {
-            System.out.println("Failure: " + responses.buildFailureMessage());
-            MonitorService.getService().es_data_error();
-//            return;
         }
 
-//        MonitorService.getService().es_data_saved(responses.getItems().length);
-    }
-
-    private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
-        IndexRequestBuilder builder = client.prepareIndex();
-        builder.setIndex(source.remove(INDEX).toString());
-        builder.setType(source.remove(TYPE).toString());
-        builder.setSource(source);
-        requestQueue.add(builder.request());
+        public int getId() {
+            return id;
+        }
     }
 
 }

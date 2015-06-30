@@ -53,7 +53,7 @@ public class LogConsumer implements Runnable, Constants {
                 if (ipMap != null) {
 
                     // TEST CODE
-                    if (mapSource.containsKey("t=" + TEST_TRACK_ID)) {
+                    if (mapSource.containsKey(TEST_TRACK_ID)) {
                         MonitorService.getService().mq_receive();
                         MonitorService.getService().es_forwarded();
                     }

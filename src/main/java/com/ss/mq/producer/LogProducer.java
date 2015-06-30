@@ -40,7 +40,7 @@ public class LogProducer {
         producer.send(data);
 
         // TEST CODE
-        if (msg.contains("t=" + TEST_TRACK_ID)) {
+        if (msg.contains(TEST_TRACK_ID)) {
             MonitorService.getService().mq_send();
         }
 
