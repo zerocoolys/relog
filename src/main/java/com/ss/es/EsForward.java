@@ -22,10 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -36,23 +33,13 @@ public class EsForward implements Constants {
 
     private static final int ONE_DAY_SECONDS = 86_400;
 
-    private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
-
     private final int HANDLER_WORKERS = Runtime.getRuntime().availableProcessors() * 2;
 
-    private final ExecutorService preHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, r -> {
-        PreHandlerRunnable runnable = (PreHandlerRunnable) r;
-        Thread t = new Thread(runnable);
-        t.setName("thread-relog-preHandler-" + runnable.getId());
-        return t;
-    });
+    private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
-    private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, r -> {
-        RequestHandlerRunnable runnable = (RequestHandlerRunnable) r;
-        Thread t = new Thread(runnable);
-        t.setName("thread-relog-requestHandler-" + runnable.getId());
-        return t;
-    });
+    private final ExecutorService preHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new DataPreHandleThreadFactory());
+
+    private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new EsRequestThreadFactory());
 
 
     public EsForward(TransportClient client) {
@@ -67,12 +54,12 @@ public class EsForward implements Constants {
 
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
         for (int i = 0; i < HANDLER_WORKERS; i++)
-            preHandlerExecutor.execute(new PreHandlerRunnable(i, client, requestQueue));
+            preHandlerExecutor.execute(new PreHandleWorker(client, requestQueue));
     }
 
     private void handleRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
         for (int i = 0; i < HANDLER_WORKERS; i++)
-            requestHandlerExecutor.execute(new RequestHandlerRunnable(i, client, requestQueue));
+            requestHandlerExecutor.execute(new RequestHandleWorker(client, requestQueue));
     }
 
     private void submitRequest(BulkRequestBuilder bulkRequestBuilder) {
@@ -92,14 +79,53 @@ public class EsForward implements Constants {
     }
 
 
-    class PreHandlerRunnable implements Runnable {
+    class DataPreHandleThreadFactory implements ThreadFactory {
 
-        private final int id;
+        private final AtomicInteger counter = new AtomicInteger(0);
+
+        @Override
+        public Thread newThread(Runnable r) {
+            PreHandlerThread thread = new PreHandlerThread(r);
+            thread.setName("thread-relog-preHandler-" + counter.incrementAndGet());
+            return thread;
+        }
+    }
+
+    class EsRequestThreadFactory implements ThreadFactory {
+
+        private final AtomicInteger counter = new AtomicInteger(0);
+
+        @Override
+        public Thread newThread(Runnable r) {
+            RequestHandlerThread thread = new RequestHandlerThread(r);
+            thread.setName("thread-relog-requestHandler-" + counter.incrementAndGet());
+            return thread;
+        }
+    }
+
+    /**
+     * 数据预处理线程
+     */
+    class PreHandlerThread extends Thread {
+        public PreHandlerThread(Runnable target) {
+            super(target);
+        }
+    }
+
+    /**
+     * es请求处理线程
+     */
+    class RequestHandlerThread extends Thread {
+        public RequestHandlerThread(Runnable target) {
+            super(target);
+        }
+    }
+
+    class PreHandleWorker implements Runnable {
         private final TransportClient client;
-        private BlockingQueue<IndexRequest> requestQueue;
+        private final BlockingQueue<IndexRequest> requestQueue;
 
-        PreHandlerRunnable(int id, TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
-            this.id = id;
+        PreHandleWorker(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
             this.client = client;
             this.requestQueue = requestQueue;
         }
@@ -243,18 +269,13 @@ public class EsForward implements Constants {
             }
         }
 
-        public int getId() {
-            return id;
-        }
     }
 
-    class RequestHandlerRunnable implements Runnable {
-        private final int id;
+    class RequestHandleWorker implements Runnable {
         private final TransportClient client;
-        private BlockingQueue<IndexRequest> requestQueue;
+        private final BlockingQueue<IndexRequest> requestQueue;
 
-        public RequestHandlerRunnable(int id, TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
-            this.id = id;
+        public RequestHandleWorker(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
             this.client = client;
             this.requestQueue = requestQueue;
         }
@@ -293,9 +314,6 @@ public class EsForward implements Constants {
             }
         }
 
-        public int getId() {
-            return id;
-        }
     }
 
 }
