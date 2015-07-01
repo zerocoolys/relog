@@ -3,7 +3,6 @@ mode=prod
 bulk=1000
 topic=huiyan_relog
 consumerThreadNumber=8
-semReqHost=127.0.0.1:8080
 
 BASE_DIR=`dirname $0`
 JAVA_HOME=`${JAVA_HOME}`
@@ -12,7 +11,7 @@ if [${JAVA_HOME} == ""]
         JAVA_HOME=/usr/local/jdk/jdk1.8.0_45
 fi
 
-while getopts "m:b:t:n:h:" arg
+while getopts "m:b:t:n:" arg
     do
         case $arg in
             "m")
@@ -27,13 +26,10 @@ while getopts "m:b:t:n:h:" arg
             "n")
                 consumerThreadNumber=$OPTARG
                 ;;
-            "h")
-                semReqHost=$OPTARG
-                ;;
             "?")
                 echo "unknow argument"
                 ;;
         esac
     done
 
-${JAVA_HOME}/bin/java -Xms2g -Xmx2g -cp ${BASE_DIR}:${BASE_DIR}/lib/*:${BASE_DIR}/conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber} ${semReqHost}
+${JAVA_HOME}/bin/java -Xms2g -Xmx2g -cp ${BASE_DIR}:${BASE_DIR}/lib/*:${BASE_DIR}/conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}
