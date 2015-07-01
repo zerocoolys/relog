@@ -25,6 +25,7 @@ public interface Constants {
     String ACCESS_MESSAGE = "access_message";
     String IP_AREA_INFO = "ip_area_information";
     String TYPE_ID_PREFIX = "typeid:";
+    String SITE_URL_PREFIX = "tsu:";
 
     String PLACEHOLDER = "-";
     String QUESTION_MARK = "?";

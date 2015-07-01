@@ -16,6 +16,9 @@ import java.util.regex.Pattern;
  */
 public class UrlUtils {
 
+    private static final String HTTP_PREFIX = "http://";
+    private static final String WWW = "www";
+
     /**
      * canonicalizeUrl
      * <p>
@@ -124,6 +127,74 @@ public class UrlUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * @param orgUrl 原始站点URL
+     * @param desUrl 实际URL
+     * @return
+     */
+    public static boolean match(String orgUrl, String desUrl) {
+        boolean isMatch = false;
+
+        if (!orgUrl.contains(HTTP_PREFIX)) {
+            orgUrl = HTTP_PREFIX + orgUrl;
+        }
+
+        if (!desUrl.contains(HTTP_PREFIX)) {
+            desUrl = HTTP_PREFIX + desUrl;
+        }
+
+        try {
+            URL _url1 = new URL(orgUrl);
+            URL _url2 = new URL(desUrl);
+
+            String domain1 = _url1.getHost();
+            String domain2 = _url2.getHost();
+
+            if (orgUrl.contains(WWW)) {
+                if (desUrl.contains(WWW)) {
+                    /**
+                     * domain1: www.best-ad.cn
+                     * domain2: www.best-ad.cn
+                     */
+                    if (domain1.equals(domain2)) {
+                        isMatch = true;
+                    }
+                } else {
+                    /**
+                     * domain1: www.best-ad.cn
+                     * domain2: sem.best-ad.cn
+                     */
+                    if (domain2.contains(domain1.replace(WWW, ""))) {
+                        isMatch = true;
+                    }
+                }
+
+            } else {
+                if (desUrl.contains(WWW)) {
+                    /**
+                     * domain1: best-ad.cn
+                     * domain2: www.best-ad.cn
+                     */
+                    if (domain2.replace(WWW, "").contains(domain1)) {
+                        isMatch = true;
+                    }
+                } else {
+                    /**
+                     * domain1: hy.best-ad.cn
+                     * domain2: api.hy.best-ad.cn
+                     */
+                    if (domain2.contains(domain1)) {
+                        isMatch = true;
+                    }
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return isMatch;
     }
 
 }

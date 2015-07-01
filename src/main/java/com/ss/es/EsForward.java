@@ -11,6 +11,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
 import redis.clients.jedis.Jedis;
 
@@ -153,6 +154,11 @@ public class EsForward implements Constants {
                     if (esType == null)
                         continue;
 
+                    // 网站代码安装的正确性检测
+                    String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
+                    if (Strings.isEmpty(siteUrl) || !UrlUtils.match(siteUrl, mapSource.get(CURR_ADDRESS).toString()))
+                        continue;
+
                     // TEST CODE
                     if (TEST_TRACK_ID.equals(trackId)) {
                         MonitorService.getService().data_ready();
@@ -207,7 +213,7 @@ public class EsForward implements Constants {
                     // 来源类型解析
                     String refer = mapSource.get(RF).toString();
                     String tt = mapSource.get(TT).toString();
-                    String rf_type = null;
+                    String rf_type;
                     if (PLACEHOLDER.equals(refer)) {  // 直接访问
                         mapSource.put(SE, PLACEHOLDER);
                         mapSource.put(KW, PLACEHOLDER);
@@ -292,11 +298,6 @@ public class EsForward implements Constants {
                 }
                 if (request == null)
                     continue;
-
-                // TEST CODE
-                if (request.sourceAsMap().containsKey(T)) {
-                    MonitorService.getService().es_data_ready();
-                }
 
                 bulkRequestBuilder.add(request);
 
