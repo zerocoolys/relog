@@ -28,6 +28,7 @@ public interface Constants {
     String SITE_URL_PREFIX = "tsu:";
 
     String PLACEHOLDER = "-";
+    String DELIMITER = ":";
     String QUESTION_MARK = "?";
 
     // Elasticsearch index prefix

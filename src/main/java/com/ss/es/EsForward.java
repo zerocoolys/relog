@@ -162,15 +162,13 @@ public class EsForward implements Constants {
 
                     /**
                      * 检测当天对同一网站访问的重复性
-                     * key: trackId-192.168.1.8-2015-07-01
+                     * key: trackId:2015-07-01
                      */
-                    String ipDupliKey = trackId + PLACEHOLDER +
-                            mapSource.get(REMOTE).toString() + PLACEHOLDER +
-                            LocalDate.now().toString();
-                    Long statusCode = jedis.sadd(ipDupliKey, mapSource.get(REMOTE).toString());
+                    String ipDupliKey = trackId + DELIMITER + LocalDate.now().toString();
+                    long statusCode = jedis.sadd(ipDupliKey, mapSource.get(REMOTE).toString());
                     mapSource.put(IP_DUPLICATE, statusCode);
                     // 设置过期时间
-                    jedis.expire(ipDupliKey, ONE_DAY_SECONDS);
+                    jedis.expire(ipDupliKey, ONE_DAY_SECONDS + 3600);
 
                     // TEST CODE
                     if (TEST_TRACK_ID.equals(trackId)) {
