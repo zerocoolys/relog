@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -158,6 +159,18 @@ public class EsForward implements Constants {
                     String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
                     if (Strings.isEmpty(siteUrl) || !UrlUtils.match(siteUrl, mapSource.get(CURR_ADDRESS).toString()))
                         continue;
+
+                    /**
+                     * 检测当天对同一网站访问的重复性
+                     * key: trackId-192.168.1.8-2015-07-01
+                     */
+                    String ipDupliKey = trackId + PLACEHOLDER +
+                            mapSource.get(REMOTE).toString() + PLACEHOLDER +
+                            LocalDate.now().toString();
+                    Long statusCode = jedis.sadd(ipDupliKey, mapSource.get(REMOTE).toString());
+                    mapSource.put(IP_DUPLICATE, statusCode);
+                    // 设置过期时间
+                    jedis.expire(ipDupliKey, ONE_DAY_SECONDS);
 
                     // TEST CODE
                     if (TEST_TRACK_ID.equals(trackId)) {

@@ -52,6 +52,13 @@ public interface Constants {
     String CURR_ADDRESS = "loc";    // 当前访问的页面
     String UNIX_TIME = "utime";     // 当前系统时间
     String CLIENT_TIME = "ctime";   // 访问当前页面的时间
+
+    /**
+     * 当天访问的ip重复标识符(依赖于trackId和ip)
+     * 第一次出现: ip_dupli=1
+     * 重复出现时: ip_dupli=0
+     */
+    String IP_DUPLICATE = "ip_dupli";
     String T = "t";         // trackId
     String TT = "tt";       // 访问次数标识符
     String VID = "vid";     // 访客唯一标识符
