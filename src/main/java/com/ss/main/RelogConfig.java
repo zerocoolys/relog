@@ -8,7 +8,6 @@ public class RelogConfig {
     private static String mode;
     private static String topic;
     private static String groupId;
-    private static String kwInfoReqUrl;
 
     public static String getMode() {
         return mode;
@@ -34,11 +33,4 @@ public class RelogConfig {
         RelogConfig.groupId = groupId;
     }
 
-    public static String getKwInfoReqUrl() {
-        return kwInfoReqUrl;
-    }
-
-    public static void setKwInfoReqUrl(String host) {
-        RelogConfig.kwInfoReqUrl = "http://" + host + "/user/%s/keyword/%s";
-    }
 }

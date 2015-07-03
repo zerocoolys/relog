@@ -58,7 +58,7 @@ public class SearchEngineParser implements Constants {
                 sk[0] = TypeEnum.HAOSOU.getName(TypeEnum.HAOSOU.getKey());
                 sk[1] = decoder.parameters().get("q").get(0).trim();
             }
-        } catch (NullPointerException e) {
+        } catch (NullPointerException | IllegalArgumentException e) {
 //            sk[0] = PLACEHOLDER;
 //            sk[1] = PLACEHOLDER;
             return false;

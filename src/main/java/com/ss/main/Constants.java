@@ -25,8 +25,10 @@ public interface Constants {
     String ACCESS_MESSAGE = "access_message";
     String IP_AREA_INFO = "ip_area_information";
     String TYPE_ID_PREFIX = "typeid:";
+    String SITE_URL_PREFIX = "tsu:";
 
     String PLACEHOLDER = "-";
+    String DELIMITER = ":";
     String QUESTION_MARK = "?";
 
     // Elasticsearch index prefix
@@ -51,6 +53,13 @@ public interface Constants {
     String CURR_ADDRESS = "loc";    // 当前访问的页面
     String UNIX_TIME = "utime";     // 当前系统时间
     String CLIENT_TIME = "ctime";   // 访问当前页面的时间
+
+    /**
+     * 当天访问的ip重复标识符(依赖于trackId和ip)
+     * 第一次出现: ip_dupli=1
+     * 重复出现时: ip_dupli=0
+     */
+    String IP_DUPLICATE = "ip_dupli";
     String T = "t";         // trackId
     String TT = "tt";       // 访问次数标识符
     String VID = "vid";     // 访客唯一标识符
@@ -81,6 +90,8 @@ public interface Constants {
     String ET_LABEL = "et_label";      // 事件的额外信息
     String ET_VALUE = "et_value";      // 事件的额外数值信息
 
+    String KEYWORD_INFO_REQUEST_URL = "http://api.hy.best-ad.cn/sem/info/keyword?kwid=%s&dm=%s";
+
     String SEM_ACCOUNT_ID = "accountId";
     String SEM_CAMPAIGN_ID = "campaignId";
     String SEM_CAMPAIGN_NAME = "campaignName";
@@ -102,6 +113,8 @@ public interface Constants {
     String VAL_RF_TYPE_DIRECT = "1";
     String VAL_RF_TYPE_SE = "2";
     String VAL_RF_TYPE_OUTLINK = "3";
+
+    String TEST_TRACK_ID = "1234567890";
 
 
     byte[] LOGO_IMG_BYTES = new byte[]{71, 73, 70, 56, 57, 97, 20, 0, 20, 0, -26, 118, 0, -3, -3, -3, -6, -6, -6, 3,

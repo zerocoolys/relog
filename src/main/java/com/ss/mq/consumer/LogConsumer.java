@@ -11,7 +11,7 @@ import kafka.consumer.KafkaStream;
 import org.elasticsearch.common.collect.Maps;
 import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,19 +46,31 @@ public class LogConsumer implements Runnable, Constants {
                 Map<String, String> ipMap;
                 if (ipInfo == null) {
                     ipMap = IPParser.getIpInfo(remoteIp);
-                    jedis.hset(IP_AREA_INFO, remoteIp, JSON.toJSONString(ipMap));
-                } else
-                    ipMap = (Map<String, String>) JSON.parse(ipInfo);
-
-                if (ipMap != null) {
-                    ipMap.forEach(mapSource::put);
-
-                    for (EsForward esForward : forwards) {
-                        esForward.add(Maps.newHashMap(mapSource));
-                        MonitorService.getService().es_forwarded();
+                    if (ipMap.isEmpty()) {
+                        ipMap = new HashMap<>();
+                        ipMap.put(REGION, PLACEHOLDER);
+                        ipMap.put(CITY, PLACEHOLDER);
+                        ipMap.put(ISP, PLACEHOLDER);
+                        jedis.hset(IP_AREA_INFO, remoteIp, JSON.toJSONString(ipMap));
+                    } else {
+                        jedis.hset(IP_AREA_INFO, remoteIp, JSON.toJSONString(ipMap));
                     }
+                } else {
+                    ipMap = (Map<String, String>) JSON.parse(ipInfo);
                 }
-            } catch (IOException | NullPointerException e) {
+
+                // TEST CODE
+                if (mapSource.containsKey(T)) {
+                    MonitorService.getService().mq_receive();
+                    MonitorService.getService().es_forwarded();
+                }
+
+                ipMap.forEach(mapSource::put);
+
+                for (EsForward esForward : forwards) {
+                    esForward.add(Maps.newHashMap(mapSource));
+                }
+            } catch (NullPointerException e) {
                 e.printStackTrace();
             } finally {
                 if (jedis != null)

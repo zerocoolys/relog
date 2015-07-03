@@ -19,9 +19,14 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
  * Created by yousheng on 15/3/16.
  */
 public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> implements Constants {
-//    private final StringBuffer responseContent = new StringBuffer();
 
     private HttpRequest request;
+
+    private final LogProducer producer;
+
+    public HttpDecoderHandler(LogProducer producer) {
+        this.producer = producer;
+    }
 
 
     @Override
@@ -31,8 +36,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
     private void messageReceived(ChannelHandlerContext ctx, HttpObject msg) {
         if (msg instanceof HttpRequest) {
-            MonitorService.getService().success_http();
-
             HttpRequest req = this.request = (HttpRequest) msg;
 
             // req.getUri().contains("?t="); 判断是否包含track id
@@ -40,6 +43,12 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                 QueryStringDecoder decoder = new QueryStringDecoder(req.getUri());
 
                 if (decoder.parameters().get(T) != null) {
+
+                    // TEST CODE
+                    if (TEST_TRACK_ID.equals(decoder.parameters().get(T).get(0))) {
+                        MonitorService.getService().success_http();
+                    }
+
                     Map<String, Object> source = new HashMap<>();
                     Set<Cookie> cookies;
 
@@ -75,9 +84,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                             .filter(c -> VID.equals(c.getName()) || UCV.equals(c.getName()))
                             .forEach(cookie -> source.put(cookie.getName(), cookie.getValue()));
                     // send message
-                    LogProducer producer = new LogProducer(RelogConfig.getTopic());
                     producer.handleMessage(JSON.toJSONString(source));
-                    producer.close();
 
                     writeResponse(ctx.channel(), cookies);
                 }

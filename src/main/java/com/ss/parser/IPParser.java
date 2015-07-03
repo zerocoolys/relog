@@ -9,12 +9,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.ss.main.Constants.EMPTY_STRING;
 import static com.ss.main.Constants.PLACEHOLDER;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_OK;
 
 /**
  * Created by dolphineor on 2015-3-18.
@@ -28,55 +32,78 @@ public class IPParser {
     private static final String IP_REGION_SUFFIX3 = "特别行政区";
 
 
-    public static Map<String, String> getIpInfo(String ip) throws IOException {
+    public static Map<String, String> getIpInfo(String ip) {
         HttpURLConnection conn = null;
         try {
             URL url = new URL(String.format(IP_URL_TEMPLATE, ip));
             conn = (HttpURLConnection) url.openConnection();
             conn.connect();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
 
-            String jsonStr = reader.lines().findFirst().get();
-            JSONObject jsonObject = JSON.parseObject(jsonStr).getJSONObject("data");
+            Map<String, String> ipInfoMap = null;
 
-            Map<String, String> ipInfoMap = new HashMap<>();
-            String region = jsonObject.getString(Constants.REGION);
-            if (region.isEmpty()) {
-                ipInfoMap.put(Constants.REGION, "国外");
-                ipInfoMap.put(Constants.CITY, PLACEHOLDER);
-                ipInfoMap.put(Constants.ISP, PLACEHOLDER);
-            } else {
-                if (IP_REGION_SUFFIX2.equals(region))
-                    ipInfoMap.put(Constants.REGION, region.substring(0, 3));
-                else {
-                    if (region.contains(IP_REGION_SUFFIX1) || region.contains(IP_REGION_SUFFIX3))
-                        ipInfoMap.put(Constants.REGION, region.substring(0, 2));
-                    else
-                        ipInfoMap.put(Constants.REGION, region.replace("省", EMPTY_STRING));
+            if (conn.getResponseCode() == HTTP_OK) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                String jsonStr = reader.lines().findFirst().get();
+                ipInfoMap = handleIpInfoResponse(jsonStr);
+            } else if (conn.getResponseCode() == HTTP_BAD_GATEWAY) {
+                conn.disconnect();
+                TimeUnit.SECONDS.sleep(1);
+                conn.connect();
+
+                if (conn.getResponseCode() == HTTP_OK) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                    String jsonStr = reader.lines().findFirst().get();
+                    ipInfoMap = handleIpInfoResponse(jsonStr);
                 }
-
-                if (jsonObject.getString(Constants.CITY).isEmpty())
-                    ipInfoMap.put(Constants.CITY, PLACEHOLDER);
-                else
-                    ipInfoMap.put(Constants.CITY, jsonObject.getString(Constants.CITY));
-
-
-                if (jsonObject.getString(Constants.ISP).isEmpty())
-                    ipInfoMap.put(Constants.ISP, PLACEHOLDER);
-                else
-                    ipInfoMap.put(Constants.ISP, jsonObject.getString(Constants.ISP));
-
             }
 
+            if (ipInfoMap == null)
+                return Collections.emptyMap();
+
             return ipInfoMap;
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } finally {
             if (conn != null) {
                 conn.disconnect();
             }
         }
-        return null;
+        return Collections.emptyMap();
+    }
+
+    private static Map<String, String> handleIpInfoResponse(String jsonStr) {
+        JSONObject jsonObject = JSON.parseObject(jsonStr).getJSONObject("data");
+
+        Map<String, String> ipInfoMap = new HashMap<>();
+        String region = jsonObject.getString(Constants.REGION);
+        if (region.isEmpty()) {
+            ipInfoMap.put(Constants.REGION, "国外");
+            ipInfoMap.put(Constants.CITY, PLACEHOLDER);
+            ipInfoMap.put(Constants.ISP, PLACEHOLDER);
+        } else {
+            if (IP_REGION_SUFFIX2.equals(region))
+                ipInfoMap.put(Constants.REGION, region.substring(0, 3));
+            else {
+                if (region.contains(IP_REGION_SUFFIX1) || region.contains(IP_REGION_SUFFIX3))
+                    ipInfoMap.put(Constants.REGION, region.substring(0, 2));
+                else
+                    ipInfoMap.put(Constants.REGION, region.replace("省", EMPTY_STRING));
+            }
+
+            if (jsonObject.getString(Constants.CITY).isEmpty())
+                ipInfoMap.put(Constants.CITY, PLACEHOLDER);
+            else
+                ipInfoMap.put(Constants.CITY, jsonObject.getString(Constants.CITY));
+
+
+            if (jsonObject.getString(Constants.ISP).isEmpty())
+                ipInfoMap.put(Constants.ISP, PLACEHOLDER);
+            else
+                ipInfoMap.put(Constants.ISP, jsonObject.getString(Constants.ISP));
+
+        }
+
+        return ipInfoMap;
     }
 
     // 获取当前主机在web上的真实IP(该主机有可能没有配置外网IP, 外网不能对当前主机进行访问)

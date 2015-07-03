@@ -7,7 +7,6 @@ import com.ss.parser.IPParser;
 import org.elasticsearch.common.collect.Maps;
 import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -49,7 +48,7 @@ public class RedisWorker implements Constants {
                                 esForward.add(Maps.newHashMap(mapSource));
                         }
                     }
-                } catch (IOException | NullPointerException e) {
+                } catch (NullPointerException e) {
                     e.printStackTrace();
                 } finally {
                     if (jedis != null)
