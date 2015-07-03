@@ -141,6 +141,7 @@ public class EsForward implements Constants {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
                     continue;
 
@@ -228,36 +229,57 @@ public class EsForward implements Constants {
                     if (PLACEHOLDER.equals(refer)) {  // 直接访问
                         mapSource.put(SE, PLACEHOLDER);
                         mapSource.put(KW, PLACEHOLDER);
+
                         rf_type = jedis.get(tt);
                         if (rf_type == null) {
                             mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
                             jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_DIRECT);
-                        } else
+                        } else {
                             mapSource.put(RF_TYPE, rf_type);
+                        }
 
                         mapSource.put(DOMAIN, PLACEHOLDER);
                     } else {
-                        List<String> skList = Lists.newArrayList();
-                        boolean found = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
-                        // extract domain from rf
-                        URL url = new URL(refer);
-                        mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
-                        if (found) {
-                            mapSource.put(SE, skList.remove(0));
-                            mapSource.put(KW, skList.remove(0));
+                        if (UrlUtils.match(siteUrl, refer)) { // 直接访问
+                            mapSource.put(RF, PLACEHOLDER);
+                            mapSource.put(SE, PLACEHOLDER);
+                            mapSource.put(KW, PLACEHOLDER);
+
                             rf_type = jedis.get(tt);
                             if (rf_type == null) {
-                                mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
-                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_SE);
-                            } else
+                                mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
+                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_DIRECT);
+                            } else {
                                 mapSource.put(RF_TYPE, rf_type);
+                            }
+
+                            mapSource.put(DOMAIN, PLACEHOLDER);
                         } else {
-                            rf_type = jedis.get(tt);
-                            if (rf_type == null) {
-                                mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
-                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_OUTLINK);
-                            } else
-                                mapSource.put(RF_TYPE, rf_type);
+                            List<String> skList = Lists.newArrayList();
+                            boolean found = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
+                            // extract domain from rf
+                            URL url = new URL(refer);
+                            mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
+                            if (found) {
+                                mapSource.put(SE, skList.remove(0));
+                                mapSource.put(KW, skList.remove(0));
+
+                                rf_type = jedis.get(tt);
+                                if (rf_type == null) {
+                                    mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
+                                    jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_SE);
+                                } else {
+                                    mapSource.put(RF_TYPE, rf_type);
+                                }
+                            } else {
+                                rf_type = jedis.get(tt);
+                                if (rf_type == null) {
+                                    mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
+                                    jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_OUTLINK);
+                                } else {
+                                    mapSource.put(RF_TYPE, rf_type);
+                                }
+                            }
                         }
                     }
 
