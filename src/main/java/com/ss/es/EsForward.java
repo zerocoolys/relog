@@ -226,7 +226,8 @@ public class EsForward implements Constants {
                     String refer = mapSource.get(RF).toString();
                     String tt = mapSource.get(TT).toString();
                     String rf_type;
-                    if (PLACEHOLDER.equals(refer)) {  // 直接访问
+                    if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) {  // 直接访问
+                        mapSource.put(RF, PLACEHOLDER);
                         mapSource.put(SE, PLACEHOLDER);
                         mapSource.put(KW, PLACEHOLDER);
 
@@ -240,45 +241,29 @@ public class EsForward implements Constants {
 
                         mapSource.put(DOMAIN, PLACEHOLDER);
                     } else {
-                        if (UrlUtils.match(siteUrl, refer)) { // 直接访问
-                            mapSource.put(RF, PLACEHOLDER);
-                            mapSource.put(SE, PLACEHOLDER);
-                            mapSource.put(KW, PLACEHOLDER);
+                        List<String> skList = Lists.newArrayList();
+                        boolean found = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
+                        // extract domain from rf
+                        URL url = new URL(refer);
+                        mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
+                        if (found) {    // 搜索引擎
+                            mapSource.put(SE, skList.remove(0));
+                            mapSource.put(KW, skList.remove(0));
 
                             rf_type = jedis.get(tt);
                             if (rf_type == null) {
-                                mapSource.put(RF_TYPE, VAL_RF_TYPE_DIRECT);
-                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_DIRECT);
+                                mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
+                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_SE);
                             } else {
                                 mapSource.put(RF_TYPE, rf_type);
                             }
-
-                            mapSource.put(DOMAIN, PLACEHOLDER);
-                        } else {
-                            List<String> skList = Lists.newArrayList();
-                            boolean found = SearchEngineParser.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
-                            // extract domain from rf
-                            URL url = new URL(refer);
-                            mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
-                            if (found) {
-                                mapSource.put(SE, skList.remove(0));
-                                mapSource.put(KW, skList.remove(0));
-
-                                rf_type = jedis.get(tt);
-                                if (rf_type == null) {
-                                    mapSource.put(RF_TYPE, VAL_RF_TYPE_SE);
-                                    jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_SE);
-                                } else {
-                                    mapSource.put(RF_TYPE, rf_type);
-                                }
+                        } else {    // 外部链接
+                            rf_type = jedis.get(tt);
+                            if (rf_type == null) {
+                                mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
+                                jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_OUTLINK);
                             } else {
-                                rf_type = jedis.get(tt);
-                                if (rf_type == null) {
-                                    mapSource.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
-                                    jedis.setex(tt, ONE_DAY_SECONDS, VAL_RF_TYPE_OUTLINK);
-                                } else {
-                                    mapSource.put(RF_TYPE, rf_type);
-                                }
+                                mapSource.put(RF_TYPE, rf_type);
                             }
                         }
                     }
