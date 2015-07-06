@@ -19,11 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -165,7 +161,11 @@ public class EsForward implements Constants {
                      * 检测当天对同一网站访问的重复性
                      * key: trackId:2015-07-01
                      */
-                    String ipDupliKey = trackId + DELIMITER + LocalDate.now().toString();
+                    long time = Long.parseLong(mapSource.get(UNIX_TIME).toString());
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(time);
+                    String dateString = DATE_FORMAT.format(calendar.getTime());
+                    String ipDupliKey = trackId + DELIMITER + dateString;
                     long statusCode = jedis.sadd(ipDupliKey, mapSource.get(REMOTE).toString());
                     mapSource.put(IP_DUPLICATE, statusCode);
                     // 设置过期时间
