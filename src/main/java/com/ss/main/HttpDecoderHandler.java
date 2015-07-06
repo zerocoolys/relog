@@ -9,7 +9,6 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import org.elasticsearch.common.Strings;
 
-import java.time.LocalDate;
 import java.util.*;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -59,11 +58,16 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
                     if (Strings.isEmpty(remote))
                         remote = ctx.channel().remoteAddress().toString().substring(1).split(":")[0];
 
+                    long time = System.currentTimeMillis();
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(time);
+                    String dateString = DATE_FORMAT.format(calendar.getTime());
+
                     mo.add(REMOTE, remote);
                     mo.add(METHOD, req.getMethod().toString());
                     mo.add(VERSION, req.getProtocolVersion().toString());
-                    mo.add(INDEX, ACCESS_PREFIX + LocalDate.now().toString());
-                    mo.add(UNIX_TIME, System.currentTimeMillis());
+                    mo.add(INDEX, ACCESS_PREFIX + dateString);
+                    mo.add(UNIX_TIME, time);
 
                     source.putAll(mo.getAttribute());
                     mo.getHttpMessage().headers().entries().forEach(entry -> source.put(entry.getKey(), entry.getValue()));

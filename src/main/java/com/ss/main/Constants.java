@@ -1,5 +1,8 @@
 package com.ss.main;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 /**
  * Created by dolphineor on 2015-3-18.
  */
@@ -113,6 +116,8 @@ public interface Constants {
     String VAL_RF_TYPE_DIRECT = "1";
     String VAL_RF_TYPE_SE = "2";
     String VAL_RF_TYPE_OUTLINK = "3";
+
+    DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     String TEST_TRACK_ID = "1234567890";
 
