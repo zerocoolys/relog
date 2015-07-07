@@ -5,8 +5,10 @@ import com.ss.es.EsPools;
 import com.ss.mq.consumer.HLConsumerGroup;
 import org.elasticsearch.client.transport.TransportClient;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * Created by dolphineor on 2015-5-27.
@@ -14,6 +16,8 @@ import java.util.List;
 public class RelogConsumerMain {
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone(ZoneId.of("Asia/Shanghai")));
+
         RelogConfig.setMode(args[0]);
         RelogConfig.setTopic(args[1]);
         EsPools.setBulkRequestNumber(Integer.parseInt(args[2]));
