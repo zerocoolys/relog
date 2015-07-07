@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -163,6 +164,7 @@ public class EsForward implements Constants {
                      */
                     long time = Long.parseLong(mapSource.get(UNIX_TIME).toString());
                     Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeZone(TimeZone.getTimeZone(ZoneId.of("Asia/Shanghai")));
                     calendar.setTimeInMillis(time);
                     String dateString = DATE_FORMAT.format(calendar.getTime());
                     String ipDupliKey = trackId + DELIMITER + dateString;
