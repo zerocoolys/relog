@@ -9,7 +9,6 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import org.elasticsearch.common.Strings;
 
-import java.time.ZoneId;
 import java.util.*;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -61,7 +60,6 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
                     long time = System.currentTimeMillis();
                     Calendar calendar = Calendar.getInstance();
-                    calendar.setTimeZone(TimeZone.getTimeZone(ZoneId.of("Asia/Shanghai")));
                     calendar.setTimeInMillis(time);
                     String dateString = DATE_FORMAT.format(calendar.getTime());
 

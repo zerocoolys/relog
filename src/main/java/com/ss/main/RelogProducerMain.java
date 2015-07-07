@@ -8,12 +8,16 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.time.ZoneId;
+import java.util.TimeZone;
+
 /**
  * Created by dolphineor on 2015-5-27.
  */
 public class RelogProducerMain {
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone(ZoneId.of("Asia/Shanghai")));
         TimerManager.startJob();
 
         // initialize config
