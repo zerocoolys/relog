@@ -34,12 +34,12 @@ public class RedisWorker implements Constants {
                         Map<String, Object> mapSource = (Map<String, Object>) JSON.parse(source);
                         String remoteIp = mapSource.get(REMOTE).toString().split(":")[0];
                         String ipInfo = jedis.hget(IP_AREA_INFO, remoteIp);
-                        Map<String, String> ipMap = null;
+                        Map<String, Object> ipMap = null;
                         if (ipInfo == null) {
                             ipMap = IPParser.getIpInfo(remoteIp);
                             jedis.hset(IP_AREA_INFO, remoteIp, JSON.toJSONString(ipMap));
                         } else
-                            ipMap = (Map<String, String>) JSON.parse(ipInfo);
+                            ipMap = (Map<String, Object>) JSON.parse(ipInfo);
 
                         if (ipMap != null) {
                             ipMap.forEach(mapSource::put);

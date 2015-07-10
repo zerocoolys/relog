@@ -50,12 +50,14 @@ public interface Constants {
     String METHOD = "method";
     String VERSION = "version";
     String REMOTE = "remote";       // IP
+    String TRAFFIC_CATEGORY = "tc"; // 0->国内, 1->国外
     String REGION = "region";       // 地域信息(省份, 直辖市等)
     String CITY = "city";           // 城市
     String ISP = "isp";             // 网络提供商
     String CURR_ADDRESS = "loc";    // 当前访问的页面
     String UNIX_TIME = "utime";     // 当前系统时间
     String CLIENT_TIME = "ctime";   // 访问当前页面的时间
+    String VISITOR_IDENTIFIER = "ct";   // 新老访客标识(0->新访客, 1->老访客)
 
     /**
      * 当天访问的ip重复标识符(依赖于trackId和ip)
