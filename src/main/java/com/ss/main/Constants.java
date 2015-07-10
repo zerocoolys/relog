@@ -90,7 +90,7 @@ public interface Constants {
      * -1: appn = {@link com.ss.main.Constants#PLACEHOLDER}
      * 0: appn = {@link com.ss.main.Constants#UNKNOWN_VALUE}
      * 1: appn的值为移动浏览器的名称(如: UC浏览器, 海豚浏览器), 同时br的值也设置成改值
-     * 2: app的值为app的名称(如: 微信, 新浪微博)
+     * 2: appn的值为移动App的名称(如: 微信, 新浪微博)
      */
     String APP_NAME = "appn";       // app名称
     String APP_OS_NUMBER = "os_num";// 移动端操作系统型号, 无法识别时标为"未知"
