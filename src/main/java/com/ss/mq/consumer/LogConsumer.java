@@ -43,7 +43,7 @@ public class LogConsumer implements Runnable, Constants {
                 Map<String, Object> mapSource = (Map<String, Object>) JSON.parse(new String(msg));
                 String remoteIp = mapSource.get(REMOTE).toString().split(":")[0];
                 String ipInfo = jedis.hget(IP_AREA_INFO, remoteIp);
-                Map<String, String> ipMap;
+                Map<String, Object> ipMap;
                 if (ipInfo == null) {
                     ipMap = IPParser.getIpInfo(remoteIp);
                     if (ipMap.isEmpty()) {
@@ -56,14 +56,14 @@ public class LogConsumer implements Runnable, Constants {
                         jedis.hset(IP_AREA_INFO, remoteIp, JSON.toJSONString(ipMap));
                     }
                 } else {
-                    ipMap = (Map<String, String>) JSON.parse(ipInfo);
+                    ipMap = (Map<String, Object>) JSON.parse(ipInfo);
                 }
 
-                // TEST CODE
-                if (mapSource.containsKey(T)) {
-                    MonitorService.getService().mq_receive();
-                    MonitorService.getService().es_forwarded();
-                }
+//                // TEST CODE
+//                if (mapSource.containsKey(T)) {
+//                    MonitorService.getService().mq_receive();
+//                    MonitorService.getService().es_forwarded();
+//                }
 
                 ipMap.forEach(mapSource::put);
 

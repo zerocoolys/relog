@@ -30,6 +30,10 @@ class EventProcessor implements Constants {
         sourceMap.put(VID, source.get(VID).toString());
         sourceMap.put(CURR_ADDRESS, source.get(CURR_ADDRESS).toString());
         sourceMap.put(UNIX_TIME, Long.parseLong(source.get(UNIX_TIME).toString()));
+        sourceMap.put(VISITOR_IDENTIFIER, Integer.parseInt(source.get(VISITOR_IDENTIFIER).toString()));
+        sourceMap.put(REGION, source.get(REGION).toString());
+        sourceMap.put(CITY, source.get(CITY).toString());
+        sourceMap.put(RF, source.get(RF).toString());
 
         source.clear();
         return sourceMap;

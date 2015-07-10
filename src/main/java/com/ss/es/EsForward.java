@@ -64,7 +64,7 @@ public class EsForward implements Constants {
         BulkResponse responses = bulkRequestBuilder.get();
         if (responses.hasFailures()) {
             System.out.println("Failure: " + responses.buildFailureMessage());
-            MonitorService.getService().es_data_error();
+//            MonitorService.getService().es_data_error();
         }
     }
 
@@ -171,10 +171,10 @@ public class EsForward implements Constants {
                     // 设置过期时间
                     jedis.expire(ipDupliKey, ONE_DAY_SECONDS + 3600);
 
-                    // TEST CODE
-                    if (TEST_TRACK_ID.equals(trackId)) {
-                        MonitorService.getService().data_ready();
-                    }
+//                    // TEST CODE
+//                    if (TEST_TRACK_ID.equals(trackId)) {
+//                        MonitorService.getService().data_ready();
+//                    }
 
                     // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
                     String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
@@ -283,7 +283,7 @@ public class EsForward implements Constants {
                     addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
-                    MonitorService.getService().data_error();
+//                    MonitorService.getService().data_error();
                 } finally {
                     if (jedis != null) {
                         jedis.close();
