@@ -2,7 +2,6 @@ package com.ss.parser;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ss.main.Constants;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
@@ -82,31 +81,31 @@ public class IPParser {
 
         Map<String, Object> ipInfoMap = new HashMap<>();
         ipInfoMap.put(TRAFFIC_CATEGORY, 0);
-        String region = jsonObject.getString(Constants.REGION);
+        String region = jsonObject.getString(REGION);
         if (region.isEmpty()) {
-            ipInfoMap.put(Constants.REGION, ABROAD);
-            ipInfoMap.put(Constants.CITY, PLACEHOLDER);
-            ipInfoMap.put(Constants.ISP, PLACEHOLDER);
+            ipInfoMap.put(REGION, ABROAD);
+            ipInfoMap.put(CITY, PLACEHOLDER);
+            ipInfoMap.put(ISP, PLACEHOLDER);
         } else {
             if (IP_REGION_SUFFIX2.equals(region))
-                ipInfoMap.put(Constants.REGION, region.substring(0, 3));
+                ipInfoMap.put(REGION, region.substring(0, 3));
             else {
                 if (region.contains(IP_REGION_SUFFIX1) || region.contains(IP_REGION_SUFFIX3))
-                    ipInfoMap.put(Constants.REGION, region.substring(0, 2));
+                    ipInfoMap.put(REGION, region.substring(0, 2));
                 else
-                    ipInfoMap.put(Constants.REGION, region.replace("省", EMPTY_STRING));
+                    ipInfoMap.put(REGION, region.replace("省", EMPTY_STRING));
             }
 
-            if (jsonObject.getString(Constants.CITY).isEmpty())
-                ipInfoMap.put(Constants.CITY, PLACEHOLDER);
+            if (jsonObject.getString(CITY).isEmpty())
+                ipInfoMap.put(CITY, PLACEHOLDER);
             else
-                ipInfoMap.put(Constants.CITY, jsonObject.getString(Constants.CITY));
+                ipInfoMap.put(CITY, jsonObject.getString(CITY));
 
 
-            if (jsonObject.getString(Constants.ISP).isEmpty())
-                ipInfoMap.put(Constants.ISP, PLACEHOLDER);
+            if (jsonObject.getString(ISP).isEmpty())
+                ipInfoMap.put(ISP, PLACEHOLDER);
             else
-                ipInfoMap.put(Constants.ISP, jsonObject.getString(Constants.ISP));
+                ipInfoMap.put(ISP, jsonObject.getString(ISP));
 
         }
 
@@ -124,7 +123,7 @@ public class IPParser {
             connection.setUseCaches(false);
             connection.connect();
 
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            if (connection.getResponseCode() == HTTP_OK) {
                 StringBuilder contentBuilder = new StringBuilder();
                 String line;
                 try (BufferedReader responseReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), chartSet))) {
@@ -151,7 +150,6 @@ public class IPParser {
         try {
             URL url = new URL(IP_CHECK_ADDRESS);
             URLConnection conn = url.openConnection();
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0");
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             conn.setRequestProperty("Accept-language", "zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3");

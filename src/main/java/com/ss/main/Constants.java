@@ -11,36 +11,41 @@ public interface Constants {
     String DEV_MODE = "dev";
     String PROD_MODE = "prod";
 
+    // Kafka Parameters
     String ZK_CONNECTOR = "zookeeper.connect";
     String KAFKA_BROKER = "metadata.broker.list";
 
-    String EMPTY_STRING = "";
-
+    // HTTP Identifier
     String HTTP_PATH = "path";
     String HTTP_PREFIX = "http:";
     String WWW_PREFIX = "www.";
     String DOUBLE_SLASH = "://";
     String REAL_IP = "X-Forwarded-For";
     String REFERRER = "Referer";
-    String DT = "dt";
+    String DT = "dt";   // 浏览当前页面的时间
 
     // Redis key
     String ACCESS_MESSAGE = "access_message";
-    String IP_AREA_INFO = "ip_area_information";
-    String TYPE_ID_PREFIX = "typeid:";
-    String SITE_URL_PREFIX = "tsu:";
+    String IP_AREA_INFO = "ip_area_information";    // ip地址缓存
+    String TYPE_ID_PREFIX = "typeid:";  // 网站trackId
+    String SITE_URL_PREFIX = "tsu:";    // 网站url
 
+    String EMPTY_STRING = "";
     String PLACEHOLDER = "-";
     String DELIMITER = ":";
     String QUESTION_MARK = "?";
+    String UNKNOWN_VALUE = "未知";
 
     // Elasticsearch index prefix
     String ACCESS_PREFIX = "access-";
+
     @Deprecated
     String VISITOR_PREFIX = "visitor-";
-    String ES_TYPE_EVENT_SUFFIX = "_event";
-    String ES_TYPE_XY_SUFFIX = "_xy";
-    String ES_TYPE_PROMOTION_URL_SUFFIX = "_promotion_url";
+
+    // Elasticsearch type suffix
+    String ES_TYPE_EVENT_SUFFIX = "_event"; //事件转化
+    String ES_TYPE_XY_SUFFIX = "_xy";   // xy坐标
+    String ES_TYPE_PROMOTION_URL_SUFFIX = "_promotion_url"; // 推广URL
 
     String ID = "_id";      // elasticsearch文档id
     String INDEX = "index"; // elasticsearch索引名称
@@ -79,6 +84,18 @@ public interface Constants {
     String DESTINATION_URL = "des_url";     // 关键词推广URL
     String NEW_VISIT = "n";         // 是否一次新的访问
     String XY = "xy";               // xy坐标信息
+    String APP_IDENTIFIER = "app";  // (-1:非移动端标识, 0:未知, 1:移动浏览器, 2:App内置浏览器)
+    /**
+     * app的值:
+     * -1: appn = {@link com.ss.main.Constants#PLACEHOLDER}
+     * 0: appn = {@link com.ss.main.Constants#UNKNOWN_VALUE}
+     * 1: appn的值为移动浏览器的名称(如: UC浏览器, 海豚浏览器), 同时br的值也设置成改值
+     * 2: app的值为app的名称(如: 微信, 新浪微博)
+     */
+    String APP_NAME = "appn";       // app名称
+    String APP_OS_NUMBER = "os_num";// 移动端操作系统型号, 无法识别时标为"未知"
+    String MOBILE_BRAND = "mobr";   // 移动品牌
+    String MOBILE_MODEL = "momo";   // 移动品牌型号
 
     // Elasticsearch 推广URL字段信息
     String UT = "ut";
@@ -115,12 +132,13 @@ public interface Constants {
     String ES_KEYWORD_NAME = "kwna";    // 推广关键词名称
 
 
-    String VAL_RF_TYPE_DIRECT = "1";
-    String VAL_RF_TYPE_SE = "2";
-    String VAL_RF_TYPE_OUTLINK = "3";
+    String VAL_RF_TYPE_DIRECT = "1";    // 直接访问标识
+    String VAL_RF_TYPE_SE = "2";        // 搜索引擎访问标识
+    String VAL_RF_TYPE_OUTLINK = "3";   // 外部链接访问标识
 
     DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
+    // TEST CONSTANT
     String TEST_TRACK_ID = "1234567890";
 
 
