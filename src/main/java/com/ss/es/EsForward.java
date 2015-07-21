@@ -156,7 +156,12 @@ public class EsForward implements Constants {
                     String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
                     if (Strings.isEmpty(siteUrl) || !UrlUtils.match(siteUrl, mapSource.get(CURR_ADDRESS).toString()))
                         continue;
-
+                    //页面转化
+                    Map<String, Object> pageConversionMap = PageConversionProcessor.pageConversionHandle(mapSource);
+                    if (pageConversionMap != null) {
+                        pageConversionMap.put(TYPE, esType + ES_TYPE_PAGE_CONVERSION_SUFFIX);
+                        addRequest(client, requestQueue, pageConversionMap);
+                    }
                     /**
                      * 检测当天对同一网站访问的重复性
                      * key: trackId:2015-07-01
