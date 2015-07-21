@@ -46,6 +46,7 @@ public interface Constants {
     String ES_TYPE_EVENT_SUFFIX = "_event"; //事件转化
     String ES_TYPE_XY_SUFFIX = "_xy";   // xy坐标
     String ES_TYPE_PROMOTION_URL_SUFFIX = "_promotion_url"; // 推广URL
+    String ES_TYPE_PAGE_CONVERSION_SUFFIX = "_pageConversion";
 
     String ID = "_id";      // elasticsearch文档id
     String INDEX = "index"; // elasticsearch索引名称
@@ -111,6 +112,15 @@ public interface Constants {
     String ET_ACTION = "et_action";    // 与目标的交互行为
     String ET_LABEL = "et_label";      // 事件的额外信息
     String ET_VALUE = "et_value";      // 事件的额外数值信息
+
+    String PAGE_CONVERSION_NAME = "p_name";//页面转化目标名称
+    String PAGE_CONVERSION_RECORD = "p_record";//页面转化记录方式
+    String PAGE_CONVERSION_ORDERID = "p_orderid";//订单号
+    String PAGE_CONVERSION_TYPE = "p_type";//页面转化类型
+    String PAGE_CONVERSION_TYPETEXT = "p_typetext";
+    String PAGE_CONVERSION_INCOME = "p_income";//页面转化预期收益
+    String PAGE_CONVERSION_CONVERSIONRATE = "p_conversionrate";//预期转化率
+
 
     String KEYWORD_INFO_REQUEST_URL = "http://api.hy.best-ad.cn/sem/info/keyword?kwid=%s&dm=%s";
 
