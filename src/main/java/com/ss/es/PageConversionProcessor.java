@@ -38,8 +38,13 @@ public class PageConversionProcessor implements Constants {
 
         Jedis redis = JRedisPools.getConnection();//获取redis连接
         String spacer = "ss_pv_=";//初始化参数pv记录间隔符
-        redis.flushDB();
-        redis.append(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), source + spacer);//向该key的value的值后添加该值
+        String loc_url = source.get("loc").toString();
+        //去掉http://和网址末端的/
+        loc_url = loc_url.split(DOUBLE_SLASH)[1];
+        if(loc_url.substring(loc_url.length()-1,loc_url.length()).toString().equals("/")){
+            loc_url = loc_url.substring(0,loc_url.length()-1);
+        }
+        redis.append(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), "{" + loc_url + "}" + spacer);//向该key的value的值后添加该值
 
         String configureData = redis.get("pc:" + source.getOrDefault(T, EMPTY_STRING).toString());//从redis读取页面转化配置信息
 
@@ -50,7 +55,7 @@ public class PageConversionProcessor implements Constants {
         //判断是否是转化目标页面
         for (int i = 0; i < target_urls.size(); i++) {
             Map target_url = (Map) target_urls.get(i);
-            if (source.get("loc").equals(target_url.get("url"))) {
+            if (loc_url.equals(target_url.get("url"))) {
                 isTarget_url = true;
                 break;
             }
@@ -79,7 +84,7 @@ public class PageConversionProcessor implements Constants {
                         JSONObject stepOne = JSONObject.parseObject(step.get(i).toString());
                         for (int k = pvs.length - path_.size() - 1 + c; k <= pvs.length + c - path_.size() - 1; k++) {
                             if (k < pvs.length && k >= 1) {
-                                if ((stepOne.getString("url").equals(pvs[k].split(",")[1].split("=")[1]))) {
+                                if ((stepOne.getString("url").equals(pvs[k].substring(1,pvs[k].length()-1)))) {
                                     isLeaf = true;
                                     break;
                                 }
@@ -106,7 +111,7 @@ public class PageConversionProcessor implements Constants {
 //                    sourceMap.put(TYPE, source.get(TYPE).toString());//索引type
                     sourceMap.put(TT, source.get(TT).toString()); //访问次数标识符
                     sourceMap.put(VID, source.get(VID).toString());//访客唯一标识符
-                    sourceMap.put(CURR_ADDRESS, source.get(CURR_ADDRESS).toString());//loc当前访问的页面
+                    sourceMap.put(CURR_ADDRESS, loc_url);//loc当前访问的页面
                     sourceMap.put(UNIX_TIME, Long.parseLong(source.get(UNIX_TIME).toString()));//当前系统时间
                     sourceMap.put(VISITOR_IDENTIFIER, Integer.parseInt(source.get(VISITOR_IDENTIFIER).toString()));//新老客户
                     sourceMap.put(REGION, source.get(REGION).toString());//地域
