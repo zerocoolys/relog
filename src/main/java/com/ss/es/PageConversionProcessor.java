@@ -44,10 +44,12 @@ public class PageConversionProcessor implements Constants {
         if(loc_url.substring(loc_url.length()-1,loc_url.length()).toString().equals("/")){
             loc_url = loc_url.substring(0,loc_url.length()-1);
         }
-        redis.append(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), "{" + loc_url + "}" + spacer);//向该key的value的值后添加该值
-
+        //对于新建的配置信息可能会少一次转化
         String configureData = redis.get("pc:" + source.getOrDefault(T, EMPTY_STRING).toString());//从redis读取页面转化配置信息
-
+        if(null == configureData || "" == configureData){
+            return null;
+        }
+        redis.append(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), "{" + loc_url + "}" + spacer);//向该key的value的值后添加该值
         JSONObject jsonObject = JSONObject.parseObject(configureData);
         JSONArray target_urls = JSON.parseArray(jsonObject.getString("target_urls"));
         JSONArray paths_jsonArray = JSON.parseArray(jsonObject.getString("paths"));
