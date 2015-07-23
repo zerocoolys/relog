@@ -6,6 +6,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.ss.main.Constants;
 import com.ss.main.RelogConfig;
 import com.ss.redis.JRedisPools;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.mapper.SourceToParse;
 import redis.clients.jedis.Jedis;
 
@@ -18,11 +21,26 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Created by perfection on 15-7-16.
  */
-public class PageConversionProcessor implements Constants {
+public class PageConversionProcessor extends Thread implements Constants {
 
     private static final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
     private static boolean flag = true;
     private static Integer count = 0;
+    private static Map mapSource;
+    private static String type;
+
+    private final TransportClient client;
+
+    private final BlockingQueue<IndexRequest> requestQueue;
+
+    PageConversionProcessor(Map mapSource, String type, TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+        this.mapSource = mapSource;
+        this.type = type;
+        this.client = client;
+        this.requestQueue = requestQueue;
+        Thread thread = new Thread(this);
+        thread.start();
+    }
 
     public static void add(Map<String, Object> source) {
         queue.add(source);
@@ -38,20 +56,23 @@ public class PageConversionProcessor implements Constants {
 
         Jedis redis = JRedisPools.getConnection();//获取redis连接
         String spacer = "ss_pv_=";//初始化参数pv记录间隔符
+        if (source.size() == 0) {
+            return null;
+        }
         String loc_url = source.get("loc").toString();
         //去掉http://和网址末端的/
         loc_url = loc_url.split(DOUBLE_SLASH)[1];
-        if(loc_url.substring(loc_url.length()-1,loc_url.length()).toString().equals("/")){
-            loc_url = loc_url.substring(0,loc_url.length()-1);
+        if (loc_url.substring(loc_url.length() - 1, loc_url.length()).toString().equals("/")) {
+            loc_url = loc_url.substring(0, loc_url.length() - 1);
         }
 
         redis.append(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), "{" + loc_url + "}" + spacer);//向该key的value的值后添加该值
         //当key永久存在或者不存在时间限制的返回值为-1
-        if(redis.ttl(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"))==-1){
-            redis.expire(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), 60*60);
+        if (redis.ttl(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt")) == -1) {
+            redis.expire(source.getOrDefault(T, EMPTY_STRING).toString() + ":" + source.get("tt"), 60 * 60);
         }
         String configureData = redis.get("pc:" + source.getOrDefault(T, EMPTY_STRING).toString());//从redis读取页面转化配置信息
-        if(null == configureData || "" == configureData){
+        if (null == configureData || "" == configureData) {
             return null;
         }
 
@@ -91,7 +112,7 @@ public class PageConversionProcessor implements Constants {
                         JSONObject stepOne = JSONObject.parseObject(step.get(i).toString());
                         for (int k = pvs.length - path_.size() - 1 + c; k <= pvs.length + c - path_.size() - 1; k++) {
                             if (k < pvs.length && k >= 1) {
-                                if ((stepOne.getString("url").equals(pvs[k].substring(1,pvs[k].length()-1)))) {
+                                if ((stepOne.getString("url").equals(pvs[k].substring(1, pvs[k].length() - 1)))) {
                                     isLeaf = true;
                                     break;
                                 }
@@ -109,35 +130,7 @@ public class PageConversionProcessor implements Constants {
                     }
                 }
                 if (isConversion) {
-                    if (source.isEmpty())
-                        return null;
-
-                    Map<String, Object> sourceMap = new HashMap<>();
-
-                    sourceMap.put(INDEX, source.get(INDEX).toString());//index索引
-//                    sourceMap.put(TYPE, source.get(TYPE).toString());//索引type
-                    sourceMap.put(TT, source.get(TT).toString()); //访问次数标识符
-                    sourceMap.put(VID, source.get(VID).toString());//访客唯一标识符
-                    sourceMap.put(CURR_ADDRESS, loc_url);//loc当前访问的页面
-                    sourceMap.put(UNIX_TIME, Long.parseLong(source.get(UNIX_TIME).toString()));//当前系统时间
-                    sourceMap.put(VISITOR_IDENTIFIER, Integer.parseInt(source.get(VISITOR_IDENTIFIER).toString()));//新老客户
-                    sourceMap.put(REGION, source.get(REGION).toString());//地域
-                    sourceMap.put(CITY, source.get(CITY).toString());//城市
-                    sourceMap.put("pm", source.get("pm").toString());//pc,移动设备
-                    sourceMap.put(REMOTE, source.get(REMOTE).toString());//ip地址
-                    sourceMap.put(UCV, source.get(UCV).toString());//cookie标识用于统计uv
-                    sourceMap.put(PAGE_CONVERSION_NAME, jsonObject.getString("target_name"));//记录页面转化目标名称
-                    sourceMap.put(PAGE_CONVERSION_RECORD, jsonObject.getString("record_type"));//页面转化记录方式
-
-//                    sourceMap.put(PAGE_CONVERSION_ORDERID,jsonObject.getString("target_name"));//订单号
-
-                    sourceMap.put(PAGE_CONVERSION_TYPE, jsonObject.getString("conv_tpye"));//页面转化类型
-                    sourceMap.put(PAGE_CONVERSION_TYPETEXT, jsonObject.getString("conv_text"));
-                    sourceMap.put(PAGE_CONVERSION_INCOME, jsonObject.getString("expected_yield"));//页面转化预期收益
-                    sourceMap.put(PAGE_CONVERSION_CONVERSIONRATE, jsonObject.getString("pecent_yield"));//页面转化预期转化率
-
-                    source.clear();
-                    return sourceMap;
+                    return handle(source, loc_url, jsonObject);
                 }
             }
             return null;
@@ -146,17 +139,17 @@ public class PageConversionProcessor implements Constants {
         }
     }
 
-    public static Map<String, Object> handle(Map<String, Object> source) {
+    public static Map<String, Object> handle(Map<String, Object> source, String loc_url, JSONObject jsonObject) {
         if (source.isEmpty())
-            return Collections.emptyMap();
+            return null;
 
         Map<String, Object> sourceMap = new HashMap<>();
 
         sourceMap.put(INDEX, source.get(INDEX).toString());//index索引
-        sourceMap.put(TYPE, source.get(TYPE).toString());//索引type
+//                    sourceMap.put(TYPE, source.get(TYPE).toString());//索引type
         sourceMap.put(TT, source.get(TT).toString()); //访问次数标识符
         sourceMap.put(VID, source.get(VID).toString());//访客唯一标识符
-        sourceMap.put(CURR_ADDRESS, source.get(CURR_ADDRESS).toString());//loc当前访问的页面
+        sourceMap.put(CURR_ADDRESS, loc_url);//loc当前访问的页面
         sourceMap.put(UNIX_TIME, Long.parseLong(source.get(UNIX_TIME).toString()));//当前系统时间
         sourceMap.put(VISITOR_IDENTIFIER, Integer.parseInt(source.get(VISITOR_IDENTIFIER).toString()));//新老客户
         sourceMap.put(REGION, source.get(REGION).toString());//地域
@@ -164,14 +157,35 @@ public class PageConversionProcessor implements Constants {
         sourceMap.put("pm", source.get("pm").toString());//pc,移动设备
         sourceMap.put(REMOTE, source.get(REMOTE).toString());//ip地址
         sourceMap.put(UCV, source.get(UCV).toString());//cookie标识用于统计uv
-        sourceMap.put(PAGE_CONVERSION_NAME, "");//记录页面转化目标名称
-        sourceMap.put(PAGE_CONVERSION_RECORD, "");//页面转化记录方式
-        sourceMap.put(PAGE_CONVERSION_ORDERID, "");//订单号
-        sourceMap.put(PAGE_CONVERSION_TYPE, "");//页面转化类型
-        sourceMap.put(PAGE_CONVERSION_INCOME, "");//页面转化预期收益
-        sourceMap.put(PAGE_CONVERSION_CONVERSIONRATE, "");//页面转化预期转化率
+        sourceMap.put(PAGE_CONVERSION_NAME, jsonObject.getString("target_name"));//记录页面转化目标名称
+        sourceMap.put(PAGE_CONVERSION_RECORD, jsonObject.getString("record_type"));//页面转化记录方式
+
+//                    sourceMap.put(PAGE_CONVERSION_ORDERID,jsonObject.getString("target_name"));//订单号
+
+        sourceMap.put(PAGE_CONVERSION_TYPE, jsonObject.getString("conv_tpye"));//页面转化类型
+        sourceMap.put(PAGE_CONVERSION_TYPETEXT, jsonObject.getString("conv_text"));
+        sourceMap.put(PAGE_CONVERSION_INCOME, jsonObject.getString("expected_yield"));//页面转化预期收益
+        sourceMap.put(PAGE_CONVERSION_CONVERSIONRATE, jsonObject.getString("pecent_yield"));//页面转化预期转化率
 
         source.clear();
         return sourceMap;
     }
+
+    public void run() {
+        Map<String, Object> pageConversionMap = pageConversionHandle(mapSource);
+        if (pageConversionMap != null) {
+            pageConversionMap.put(TYPE, type);
+            addRequest(client, requestQueue, pageConversionMap);
+
+        }
+    }
+
+    private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
+        IndexRequestBuilder builder = client.prepareIndex();
+        builder.setIndex(source.remove(INDEX).toString());
+        builder.setType(source.remove(TYPE).toString());
+        builder.setSource(source);
+        requestQueue.add(builder.request());
+    }
+
 }
