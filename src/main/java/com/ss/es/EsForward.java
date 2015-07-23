@@ -2,6 +2,7 @@ package com.ss.es;
 
 import com.ss.main.Constants;
 import com.ss.monitor.MonitorService;
+import com.ss.parser.GarbledCodeParser;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
@@ -20,7 +21,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -253,7 +258,12 @@ public class EsForward implements Constants {
                         mapSource.put(DOMAIN, url.getProtocol() + DOUBLE_SLASH + url.getHost());
                         if (found) {    // 搜索引擎
                             mapSource.put(SE, skList.remove(0));
-                            mapSource.put(KW, skList.remove(0));
+
+                            // 搜索词乱码识别
+                            String searchWord = skList.remove(0);
+                            if (GarbledCodeParser.isGarbledCode(searchWord))
+                                searchWord = PLACEHOLDER;
+                            mapSource.put(KW, searchWord);
 
                             rf_type = jedis.get(tt);
                             if (rf_type == null) {
