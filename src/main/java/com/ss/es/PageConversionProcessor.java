@@ -31,13 +31,12 @@ public class PageConversionProcessor extends Thread implements Constants {
 
     private final TransportClient client;
 
-    private final BlockingQueue<IndexRequest> requestQueue;
+    private static final BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
 
-    PageConversionProcessor(Map mapSource, String type, TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
+    PageConversionProcessor(Map mapSource, String type, TransportClient client) {
         this.mapSource = mapSource;
         this.type = type;
         this.client = client;
-        this.requestQueue = requestQueue;
         Thread thread = new Thread(this);
         thread.start();
     }
