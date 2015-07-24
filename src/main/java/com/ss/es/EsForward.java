@@ -162,7 +162,7 @@ public class EsForward implements Constants {
                     if (Strings.isEmpty(siteUrl) || !UrlUtils.match(siteUrl, mapSource.get(CURR_ADDRESS).toString()))
                         continue;
                     //页面转化
-                    PageConversionProcessor pageConversionProcessor = new PageConversionProcessor(mapSource, esType + ES_TYPE_PAGE_CONVERSION_SUFFIX, client,  requestQueue);
+                    PageConversionProcessor pageConversionProcessor = new PageConversionProcessor(mapSource, esType + ES_TYPE_PAGE_CONVERSION_SUFFIX, client);
                     /**
                      * 检测当天对同一网站访问的重复性
                      * key: trackId:2015-07-01
