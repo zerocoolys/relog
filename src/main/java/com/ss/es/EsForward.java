@@ -258,7 +258,7 @@ public class EsForward implements Constants {
                             // 搜索词乱码识别
                             String searchWord = skList.remove(0);
                             if (GarbledCodeParser.isGarbledCode(searchWord))
-                                searchWord = PLACEHOLDER;
+                                searchWord = GARBLED_VALUE;
                             mapSource.put(KW, searchWord);
 
                             rf_type = jedis.get(tt);

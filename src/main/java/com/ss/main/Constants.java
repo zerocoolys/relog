@@ -35,6 +35,7 @@ public interface Constants {
     String DELIMITER = ":";
     String QUESTION_MARK = "?";
     String UNKNOWN_VALUE = "未知";
+    String GARBLED_VALUE = "--";
 
     // Elasticsearch index prefix
     String ACCESS_PREFIX = "access-";
