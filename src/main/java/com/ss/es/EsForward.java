@@ -198,6 +198,7 @@ public class EsForward implements Constants {
                         if (!mapSource.get(CURR_ADDRESS).toString().contains(SEM_KEYWORD_IDENTIFIER))
                             continue;
                         mapSource.put(TYPE, esType + ES_TYPE_PROMOTION_URL_SUFFIX);
+                        mapSource.put(HOST, trackId);
                         addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
                         continue;
                     }

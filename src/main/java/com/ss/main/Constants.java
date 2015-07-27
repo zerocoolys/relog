@@ -56,6 +56,7 @@ public interface Constants {
     // Elasticsearch field
     String METHOD = "method";
     String VERSION = "version";
+    String HOST = "Host";
     String REMOTE = "remote";       // IP
     String TRAFFIC_CATEGORY = "tc"; // 0->国内, 1->国外
     String REGION = "region";       // 地域信息(省份, 直辖市等)
