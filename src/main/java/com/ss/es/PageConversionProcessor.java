@@ -186,6 +186,7 @@ public class PageConversionProcessor implements Constants {
                     }
                 }
                 if (isConversion) {
+                    closeRedis(redis);
                     return handle(source, loc_url, jsonObject);
                 }
             }
