@@ -4,15 +4,13 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.ss.main.Constants;
-import com.ss.main.RelogConfig;
 import com.ss.redis.JRedisPools;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.index.mapper.SourceToParse;
 import redis.clients.jedis.Jedis;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -21,32 +19,86 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Created by perfection on 15-7-16.
  */
-public class PageConversionProcessor extends Thread implements Constants {
+public class PageConversionProcessor implements Constants {
 
-    private static final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
-    private static boolean flag = true;
-    private static Integer count = 0;
-    private static Map mapSource;
-    private static String type;
+    private final BlockingQueue<Map<String, Object>> pageConversionQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
 
-    private final TransportClient client;
 
-    private static final BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
+    PageConversionProcessor(TransportClient client) {
 
-    PageConversionProcessor(Map mapSource, String type, TransportClient client) {
-        this.mapSource = mapSource;
-        this.type = type;
-        this.client = client;
-        Thread thread = new Thread(this);
-        thread.start();
+        Thread requestThread = new Thread(() -> {
+            while (true) {
+                Map<String, Object> pageConversionMap = null;
+                try {
+                    pageConversionMap = pageConversionQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (pageConversionMap == null)
+                    continue;
+
+                pageConversionMap = pageConversionHandle(pageConversionMap);
+
+                if (pageConversionMap == null)
+                    continue;
+
+                addRequest(client, requestQueue, pageConversionMap);
+            }
+        });
+
+        Thread esThread = new Thread(() -> {
+            BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+            while (true) {
+                IndexRequest request = null;
+                try {
+                    request = requestQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (request == null)
+                    continue;
+
+                bulkRequestBuilder.add(request);
+
+                if (requestQueue.isEmpty() && bulkRequestBuilder.numberOfActions() > 0) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                    continue;
+                }
+
+                if (bulkRequestBuilder.numberOfActions() == EsPools.getBulkRequestNumber()) {
+                    bulkRequestBuilder.get();
+                    bulkRequestBuilder = client.prepareBulk();
+                }
+
+            }
+        });
+
+        requestThread.setName("thread-relog-pageconversion-pre");
+        esThread.setName("thread-relog-pageconversion-es");
+
+        requestThread.start();
+        esThread.start();
     }
 
-    public static void add(Map<String, Object> source) {
-        queue.add(source);
+    public void add(Map<String, Object> source, String esType) {
+        Map<String, Object> map = new HashMap<>(source);
+        map.put(TYPE, esType + ES_TYPE_PAGE_CONVERSION_SUFFIX);
+        pageConversionQueue.add(map);
+    }
+
+
+    private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
+        IndexRequestBuilder builder = client.prepareIndex();
+        builder.setIndex(source.remove(INDEX).toString());
+        builder.setType(source.remove(TYPE).toString());
+        builder.setSource(source);
+        requestQueue.add(builder.request());
     }
 
     //统计页面转化数据
-    public static Map<String, Object> pageConversionHandle(Map<String, Object> source) {
+    private Map<String, Object> pageConversionHandle(Map<String, Object> source) {
         //测试参数包
 //        String target = "{paths:[{steps:[{step_urls:[{url:'http://www.best-ad.cn/Quick_vote.html'},{url:'http://www.best-ad.cn/search.html'}],step_urls:[{url: 'http://www.best-ad.cn/Eye.html'}]}]},{steps:[{step_urls:[{url:'http://www.best-ad.cn/Wireless.html'}]}]}],target_urls:[ { url: 'http://www.best-ad.cn/', _id: '55a8c253d3f947e810942193' } ]}";
 //        String strings = "[{url:'http://www.best-ad.cn/Quick_vote.html'},{url:'http://www.best-ad.cn/Wireless.html'}]";
@@ -138,7 +190,7 @@ public class PageConversionProcessor extends Thread implements Constants {
         }
     }
 
-    public static Map<String, Object> handle(Map<String, Object> source, String loc_url, JSONObject jsonObject) {
+    private Map<String, Object> handle(Map<String, Object> source, String loc_url, JSONObject jsonObject) {
         if (source.isEmpty())
             return null;
 
@@ -168,23 +220,6 @@ public class PageConversionProcessor extends Thread implements Constants {
 
         source.clear();
         return sourceMap;
-    }
-
-    public void run() {
-        Map<String, Object> pageConversionMap = pageConversionHandle(mapSource);
-        if (pageConversionMap != null) {
-            pageConversionMap.put(TYPE, type);
-            addRequest(client, requestQueue, pageConversionMap);
-
-        }
-    }
-
-    private void addRequest(TransportClient client, BlockingQueue<IndexRequest> requestQueue, Map<String, Object> source) {
-        IndexRequestBuilder builder = client.prepareIndex();
-        builder.setIndex(source.remove(INDEX).toString());
-        builder.setType(source.remove(TYPE).toString());
-        builder.setSource(source);
-        requestQueue.add(builder.request());
     }
 
 }

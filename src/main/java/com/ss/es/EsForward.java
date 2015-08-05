@@ -45,7 +45,12 @@ public class EsForward implements Constants {
     private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new EsRequestThreadFactory());
 
 
+    private final PageConversionProcessor pageConversionProcessor;
+
+
     public EsForward(TransportClient client) {
+        this.pageConversionProcessor = new PageConversionProcessor(client);
+
         BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
         preHandle(client, requestQueue);
         handleRequest(client, requestQueue);
@@ -156,13 +161,13 @@ public class EsForward implements Constants {
                     String esType = jedis.get(TYPE_ID_PREFIX + trackId);
                     if (esType == null)
                         continue;
+                    mapSource.remove(T);
 
                     // 网站代码安装的正确性检测
                     String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
                     if (Strings.isEmpty(siteUrl) || !UrlUtils.match(siteUrl, mapSource.get(CURR_ADDRESS).toString()))
                         continue;
-                    //页面转化
-                    PageConversionProcessor pageConversionProcessor = new PageConversionProcessor(mapSource, esType + ES_TYPE_PAGE_CONVERSION_SUFFIX, client);
+
                     /**
                      * 检测当天对同一网站访问的重复性
                      * key: trackId:2015-07-01
@@ -177,15 +182,19 @@ public class EsForward implements Constants {
                     // 设置过期时间
                     jedis.expire(ipDupliKey, ONE_DAY_SECONDS + 3600);
 
+                    //页面转化
+                    pageConversionProcessor.add(mapSource, esType);
+
 //                    // TEST CODE
 //                    if (TEST_TRACK_ID.equals(trackId)) {
 //                        MonitorService.getService().data_ready();
 //                    }
 
-                    // 区分普通访问, 事件跟踪, xy坐标, 推广URL统计信息
+                    // 区分普通访问, 事件跟踪, xy坐标, 推广URL, 指定广告跟踪统计信息
                     String eventInfo = mapSource.getOrDefault(ET, EMPTY_STRING).toString();
                     String xyCoordinateInfo = mapSource.getOrDefault(XY, EMPTY_STRING).toString();
                     String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
+                    String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
                         addRequest(client, requestQueue, EventProcessor.handle(mapSource));
@@ -200,6 +209,21 @@ public class EsForward implements Constants {
                         mapSource.put(TYPE, esType + ES_TYPE_PROMOTION_URL_SUFFIX);
                         mapSource.put(HOST, trackId);
                         addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
+                        continue;
+                    } else if (!adTrackInfo.isEmpty()) {
+                        Map<String, Object> adTrackMap = new HashMap<>();
+                        adTrackMap.put(INDEX, mapSource.get(INDEX).toString());
+                        adTrackMap.put(TYPE, esType + ES_TYPE_AD_TRACK);
+                        adTrackMap.put(AD_SOURCE, mapSource.get(AD_SOURCE).toString());
+                        adTrackMap.put(AD_MEDIA, mapSource.get(AD_MEDIA).toString());
+                        adTrackMap.put(AD_CAMPAIGN, mapSource.get(AD_CAMPAIGN).toString());
+                        adTrackMap.put(AD_KEYWORD, mapSource.get(AD_KEYWORD).toString());
+                        adTrackMap.put(AD_CREATIVE, mapSource.get(AD_CREATIVE).toString());
+                        adTrackMap.put(REMOTE, mapSource.get(REMOTE).toString());
+                        adTrackMap.put(UNIX_TIME, Long.parseLong(mapSource.get(UNIX_TIME).toString()));
+                        mapSource.clear();
+
+                        addRequest(client, requestQueue, adTrackMap);
                         continue;
                     }
                     mapSource.put(TYPE, esType);
