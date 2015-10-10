@@ -67,6 +67,13 @@ public interface Constants {
     String UNIX_TIME = "utime";     // 当前系统时间
     String CLIENT_TIME = "ctime";   // 访问当前页面的时间
     String VISITOR_IDENTIFIER = "ct";   // 新老访客标识(0->新访客, 1->老访客)
+    
+    //Mongodb field
+    String MONGODB_IS_NEW = "isNew";  // 是否为新访客(0->新访客, 1->老访客)
+    String MONGODB_TYPE = "type"; // 业务：对应不同的客户。字段：对应elasticsearch文档类型
+    String MONGODB_USER_ID = "userId"; // 对应VID。
+    String MONGODB_PV = "pv"; // 对应VID。
+    String MONGODB_PREFIX = "ga-";
 
     /**
      * 当天访问的ip重复标识符(依赖于trackId和ip)
