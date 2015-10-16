@@ -53,6 +53,7 @@ public interface Constants {
     String ID = "_id";      // elasticsearch文档id
     String INDEX = "index"; // elasticsearch索引名称
     String TYPE = "_type";  // elasticsearch文档类型
+    
 
     // Elasticsearch field
     String METHOD = "method";
@@ -116,6 +117,7 @@ public interface Constants {
     String ET_ACTION = "et_action";    // 与目标的交互行为
     String ET_LABEL = "et_label";      // 事件的额外信息
     String ET_VALUE = "et_value";      // 事件的额外数值信息
+    String ET_TARGET = "et_target";
 
     String PAGE_CONVERSION_NAME = "p_name";//页面转化目标名称
     String PAGE_CONVERSION_RECORD = "p_record";//页面转化记录方式
