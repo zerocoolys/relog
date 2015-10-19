@@ -73,7 +73,15 @@ public interface Constants {
     String MONGODB_TYPE = "type"; // 业务：对应不同的客户。字段：对应elasticsearch文档类型
     String MONGODB_USER_ID = "userId"; // 对应VID。
     String MONGODB_PV = "pv"; // 对应VID。
+    
+    //Mongodb table prefix
     String MONGODB_PREFIX = "ga-";
+    String MONGODB_PREFIX_WEEK = "ga-week-";
+    String MONGODB_PREFIX_MONTH = "ga-month-";
+    
+    //Mongodb constant
+    String NEW_CUSTOMER = "0";
+    
 
     /**
      * 当天访问的ip重复标识符(依赖于trackId和ip)

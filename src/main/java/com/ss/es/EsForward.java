@@ -1,7 +1,6 @@
 package com.ss.es;
 
 import com.ss.main.Constants;
-import com.ss.monitor.MonitorService;
 import com.ss.parser.GarbledCodeParser;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
@@ -231,7 +230,9 @@ public class EsForward implements Constants {
                         continue;
                     }
                     mapSource.put(TYPE, esType);
-                    //写入mongoDB
+                   /**
+                    * 保存访问信息
+                    */
                     gaProcessor.add(mapSource);
                     
                     // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
