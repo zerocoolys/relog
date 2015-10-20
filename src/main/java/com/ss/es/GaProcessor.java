@@ -1,11 +1,11 @@
 package com.ss.es;
 
-import java.text.ParseException;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import org.elasticsearch.common.lang3.StringUtils;
 
 import com.mongodb.DBObject;
 import com.ss.main.Constants;
@@ -44,6 +44,10 @@ public class GaProcessor implements Constants {
 
 		String type = source.get(TYPE).toString();
 		String userId = source.get(VID).toString();
+
+		if (StringUtils.isBlank(type) || StringUtils.isBlank(userId)) {
+			return;
+		}
 
 		Map<String, Object> querier = new HashMap<String, Object>();
 		querier.put(MONGODB_TYPE, type);
@@ -104,8 +108,5 @@ public class GaProcessor implements Constants {
 			MongoDBUtil.insert(dBObject, collName);
 		}
 	}
-	
-	
-
 
 }
