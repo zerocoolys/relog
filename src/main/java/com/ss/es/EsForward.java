@@ -198,6 +198,7 @@ public class EsForward implements Constants {
                     String xyCoordinateInfo = mapSource.getOrDefault(XY, EMPTY_STRING).toString();
                     String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
                     String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
+                    Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
                         addRequest(client, requestQueue, EventProcessor.handle(mapSource));
@@ -214,7 +215,6 @@ public class EsForward implements Constants {
                         addRequest(client, requestQueue, PromotionUrlProcessor.handle(mapSource));
                         continue;
                     } else if (!adTrackInfo.isEmpty()) {
-                        Map<String, Object> adTrackMap = new HashMap<>();
                         adTrackMap.put(INDEX, mapSource.get(INDEX).toString());
                         adTrackMap.put(TYPE, esType + ES_TYPE_AD_TRACK);
                         adTrackMap.put(AD_SOURCE, mapSource.get(AD_SOURCE).toString());
@@ -224,14 +224,11 @@ public class EsForward implements Constants {
                         adTrackMap.put(AD_CREATIVE, mapSource.get(AD_CREATIVE).toString());
                         adTrackMap.put(REMOTE, mapSource.get(REMOTE).toString());
                         adTrackMap.put(UNIX_TIME, Long.parseLong(mapSource.get(UNIX_TIME).toString()));
-                        mapSource.clear();
 
-                        addRequest(client, requestQueue, adTrackMap);
-                        continue;
                     }
                     mapSource.put(TYPE, esType);
                    /**
-                    * 保存访问信息
+                    * Cache  - 保存访问信息
                     */
                     gaProcessor.add(mapSource);
                     
@@ -328,6 +325,11 @@ public class EsForward implements Constants {
                     Consumer<String> pathConsumer = (String c) -> pathMap.put(HTTP_PATH + (integer.getAndIncrement()), c);
                     Arrays.asList(location.split("/")).stream().filter((p) -> !p.isEmpty() || !p.startsWith(HTTP_PREFIX)).forEach(pathConsumer);
                     mapSource.put(PATHS, pathMap);
+                    
+                    if(!adTrackInfo.isEmpty()){
+                    	 fillingDate(mapSource,adTrackMap);
+                    	 addRequest(client, requestQueue, adTrackMap);
+                    }
 
                   
                     addRequest(client, requestQueue, mapSource);
@@ -344,6 +346,30 @@ public class EsForward implements Constants {
 
             }
         }
+
+		private void fillingDate(Map<String, Object> mapSource, Map<String, Object> adTrackMap) {
+            adTrackMap.put(TT, mapSource.get(TT).toString());
+            adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
+            adTrackMap.put(UCV, mapSource.get(UCV).toString());
+            adTrackMap.put(CITY, mapSource.get(CITY).toString());
+            adTrackMap.put(ISP, mapSource.get(ISP).toString());
+            adTrackMap.put(IP_DUPLICATE, mapSource.get(IP_DUPLICATE).toString());
+            adTrackMap.put(VID, mapSource.get(VID).toString());
+            adTrackMap.put(SE, mapSource.get(SE).toString());
+            adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
+            adTrackMap.put(CLIENT_TIME, mapSource.get(CLIENT_TIME).toString());
+            adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            adTrackMap.put(RF_TYPE, mapSource.get(RF_TYPE).toString());
+            adTrackMap.put(HOST, mapSource.get(HOST).toString());
+            adTrackMap.put(KW, mapSource.get(KW).toString());
+            adTrackMap.put(VERSION, mapSource.get(VERSION).toString());
+            adTrackMap.put(METHOD, mapSource.get(METHOD).toString());
+            adTrackMap.put(VISITOR_IDENTIFIER, mapSource.get(VISITOR_IDENTIFIER).toString());
+            adTrackMap.put(RF, mapSource.get(RF).toString());
+            adTrackMap.put(REGION, mapSource.get(REGION).toString());
+            adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
+            adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+		}
 
     }
 
