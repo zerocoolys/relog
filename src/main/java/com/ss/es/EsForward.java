@@ -1,12 +1,12 @@
 package com.ss.es;
 
 import com.ss.main.Constants;
-import com.ss.monitor.MonitorService;
 import com.ss.parser.GarbledCodeParser;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
 import com.ss.utils.UrlUtils;
+
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -14,6 +14,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
+
 import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
@@ -43,14 +44,15 @@ public class EsForward implements Constants {
     private final ExecutorService preHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new DataPreHandleThreadFactory());
 
     private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new EsRequestThreadFactory());
-
-
+    
+	private final GaProcessor gaProcessor;
+    
     private final PageConversionProcessor pageConversionProcessor;
-
-
+    
+    
     public EsForward(TransportClient client) {
         this.pageConversionProcessor = new PageConversionProcessor(client);
-
+        this.gaProcessor = new GaProcessor();
         BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
         preHandle(client, requestQueue);
         handleRequest(client, requestQueue);
@@ -184,7 +186,8 @@ public class EsForward implements Constants {
 
                     //页面转化
                     pageConversionProcessor.add(mapSource, esType);
-
+                    
+                   
 //                    // TEST CODE
 //                    if (TEST_TRACK_ID.equals(trackId)) {
 //                        MonitorService.getService().data_ready();
@@ -224,7 +227,11 @@ public class EsForward implements Constants {
 
                     }
                     mapSource.put(TYPE, esType);
-
+                   /**
+                    * Cache  - 保存访问信息
+                    */
+                    gaProcessor.add(mapSource);
+                    
                     // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                     int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
 
@@ -324,7 +331,10 @@ public class EsForward implements Constants {
                     	 addRequest(client, requestQueue, adTrackMap);
                     }
 
+                  
                     addRequest(client, requestQueue, mapSource);
+
+                   
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
 //                    MonitorService.getService().data_error();
