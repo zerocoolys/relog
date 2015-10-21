@@ -231,7 +231,7 @@ public class EsForward implements Constants {
                     }
                     mapSource.put(TYPE, esType);
                    /**
-                    * 保存访问信息
+                    * Cache  - 保存访问信息
                     */
                     gaProcessor.add(mapSource);
                     
