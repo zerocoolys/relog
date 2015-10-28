@@ -224,6 +224,10 @@ public class EsForward implements Constants {
                         adTrackMap.put(AD_CREATIVE, mapSource.get(AD_CREATIVE).toString());
                         adTrackMap.put(REMOTE, mapSource.get(REMOTE).toString());
                         adTrackMap.put(UNIX_TIME, Long.parseLong(mapSource.get(UNIX_TIME).toString()));
+                        String ipAdsDupliKey = trackId+":ads" + DELIMITER + dateString;
+                        long adSstatusCode = jedis.sadd(ipAdsDupliKey, mapSource.get(REMOTE).toString());
+                        jedis.expire(ipAdsDupliKey, ONE_DAY_SECONDS + 3600);
+                        adTrackMap.put(IP_DUPLICATE, adSstatusCode);
 
                     }
                     mapSource.put(TYPE, esType);
@@ -349,11 +353,15 @@ public class EsForward implements Constants {
 
 		private void fillingDate(Map<String, Object> mapSource, Map<String, Object> adTrackMap) {
             adTrackMap.put(TT, mapSource.get(TT).toString());
-            adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
+            Map<String, String> params = URLRequest(mapSource.get(CURR_ADDRESS).toString());
+            if(params.containsKey(RF)){
+            	adTrackMap.put(CURR_ADDRESS, params.get(RF));
+            }else{
+            	 adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
+            }
             adTrackMap.put(UCV, mapSource.get(UCV).toString());
             adTrackMap.put(CITY, mapSource.get(CITY).toString());
             adTrackMap.put(ISP, mapSource.get(ISP).toString());
-            adTrackMap.put(IP_DUPLICATE, mapSource.get(IP_DUPLICATE).toString());
             adTrackMap.put(VID, mapSource.get(VID).toString());
             adTrackMap.put(SE, mapSource.get(SE).toString());
             adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
@@ -369,6 +377,54 @@ public class EsForward implements Constants {
             adTrackMap.put(REGION, mapSource.get(REGION).toString());
             adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
             adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+		}
+		
+		/**
+		 * 
+		 * @param URL
+		 * @description 解析url获取参数
+		 * @author ZhangHuaRong
+		 * @update 2015年10月28日 下午2:19:24
+		 */
+		private  Map<String, String> URLRequest(String URL) {
+			Map<String, String> mapRequest = new HashMap<String, String>();
+			String[] arrSplit = null;
+			String strUrlParam = TruncateUrlPage(URL);
+			if (strUrlParam == null) {
+				return mapRequest;
+			}
+			// 每个键值为一组
+			arrSplit = strUrlParam.split("[&]");
+			for (String strSplit : arrSplit) {
+				String[] arrSplitEqual = null;
+				arrSplitEqual = strSplit.split("[=]");
+				// 解析出键值
+				if (arrSplitEqual.length > 1) {
+					// 正确解析
+					mapRequest.put(arrSplitEqual[0], arrSplitEqual[1]);
+				} else {
+					if (arrSplitEqual[0] != "") {
+						// 只有参数没有值，不加入
+						mapRequest.put(arrSplitEqual[0], "");
+					}
+				}
+			}
+			return mapRequest;
+		}
+		
+		private  String TruncateUrlPage(String strURL) {
+			String strAllParam = null;
+			String[] arrSplit = null;
+			strURL = strURL.trim().toLowerCase();
+			arrSplit = strURL.split("[?]");
+			if (strURL.length() > 1) {
+				if (arrSplit.length > 1) {
+					if (arrSplit[1] != null) {
+						strAllParam = arrSplit[1];
+					}
+				}
+			}
+			return strAllParam;
 		}
 
     }
