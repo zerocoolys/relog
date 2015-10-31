@@ -45,6 +45,7 @@ public interface Constants {
 
     // Elasticsearch type suffix
     String ES_TYPE_EVENT_SUFFIX = "_event"; //事件转化
+    String ES_TYPE_PAGE_SUFFIX = "_page";//页面转化
     String ES_TYPE_XY_SUFFIX = "_xy";   // xy坐标
     String ES_TYPE_PROMOTION_URL_SUFFIX = "_promotion_url"; // 推广URL
     String ES_TYPE_PAGE_CONVERSION_SUFFIX = "_pageConversion";
