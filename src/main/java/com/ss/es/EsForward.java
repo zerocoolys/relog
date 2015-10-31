@@ -359,11 +359,7 @@ public class EsForward implements Constants {
             adTrackMap.put(TT, mapSource.get(TT).toString());
             Map<String, String> params = URLRequest(mapSource.get(CURR_ADDRESS).toString());
             if(params.containsKey(RF)){
-            	if(PLACEHOLDER.equals(params.get(RF))){
-            		adTrackMap.put(CURR_ADDRESS, "直接访问");
-            	}else{
-            		adTrackMap.put(CURR_ADDRESS, params.get(RF));
-            	}
+            	adTrackMap.put(RF, params.get(RF));
             }else{
             	 adTrackMap.put(RF, mapSource.get(RF).toString());
             }
@@ -386,6 +382,9 @@ public class EsForward implements Constants {
             adTrackMap.put(REGION, mapSource.get(REGION).toString());
             adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
             adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            if(PLACEHOLDER.equals(adTrackMap.get(RF).toString().trim())){
+            	adTrackMap.put(RF, "直接访问");
+            }
 		}
 		
 		/**
