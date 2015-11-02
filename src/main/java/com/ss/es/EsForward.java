@@ -199,11 +199,6 @@ public class EsForward implements Constants {
                     String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
                     String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
                     String pcname = mapSource.getOrDefault(PAGE_CONVERSION_NAME, EMPTY_STRING).toString();//页面转化
-                    if(adTrackInfo!=null){
-                    	  System.out.println("=========================");
-                    	  System.out.println(mapSource);
-                    	  System.out.println("=========================");
-                    }
                   
                     Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
@@ -363,11 +358,11 @@ public class EsForward implements Constants {
 
 		private void fillingDate(Map<String, Object> mapSource, Map<String, Object> adTrackMap) {
             adTrackMap.put(TT, mapSource.get(TT).toString());
-            Map<String, String> params = URLRequest(mapSource.get(CURR_ADDRESS).toString());
-            if(params.containsKey(RF)){
-            	adTrackMap.put(RF, params.get(RF));
+            
+            if(mapSource.containsKey(AD_RF)){
+            	 adTrackMap.put(RF, mapSource.get(AD_RF).toString());
             }else{
-            	 adTrackMap.put(RF, mapSource.get(RF).toString());
+            	 adTrackMap.put(RF, PLACEHOLDER);
             }
             if(mapSource.containsKey(CURR_ADDRESS)){
             	 adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());

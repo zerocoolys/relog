@@ -169,7 +169,7 @@ public interface Constants {
     String AD_CAMPAIGN = "cpna";        // 计划
     String AD_KEYWORD = "kwna";         // 关键词
     String AD_CREATIVE = "crt";         // 创意
-
+    String AD_RF = "adsrf";              // 来源
 
     String VAL_RF_TYPE_DIRECT = "1";    // 直接访问标识
     String VAL_RF_TYPE_SE = "2";        // 搜索引擎访问标识
