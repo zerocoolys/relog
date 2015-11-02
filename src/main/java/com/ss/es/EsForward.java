@@ -199,6 +199,12 @@ public class EsForward implements Constants {
                     String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
                     String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
                     String pcname = mapSource.getOrDefault(PAGE_CONVERSION_NAME, EMPTY_STRING).toString();//页面转化
+                    if(adTrackInfo!=null){
+                    	  System.out.println("=========================");
+                    	  System.out.println(mapSource);
+                    	  System.out.println("=========================");
+                    }
+                  
                     Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
