@@ -368,7 +368,9 @@ public class EsForward implements Constants {
             adTrackMap.put(CITY, mapSource.get(CITY).toString());
             adTrackMap.put(ISP, mapSource.get(ISP).toString());
             adTrackMap.put(VID, mapSource.get(VID).toString());
-            adTrackMap.put(SE, mapSource.get(SE).toString());
+            if(mapSource.containsKey(SE)){
+            	 adTrackMap.put(SE, mapSource.get(SE).toString());
+            }
             adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
             adTrackMap.put(CLIENT_TIME, mapSource.get(CLIENT_TIME).toString());
             adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
