@@ -363,27 +363,66 @@ public class EsForward implements Constants {
             }else{
             	 adTrackMap.put(RF, mapSource.get(RF).toString());
             }
-            adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
-            adTrackMap.put(UCV, mapSource.get(UCV).toString());
-            adTrackMap.put(CITY, mapSource.get(CITY).toString());
-            adTrackMap.put(ISP, mapSource.get(ISP).toString());
-            adTrackMap.put(VID, mapSource.get(VID).toString());
+            if(mapSource.containsKey(CURR_ADDRESS)){
+            	 adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
+            }
+           
+			if(mapSource.containsKey(UCV)){
+				 adTrackMap.put(UCV, mapSource.get(UCV).toString());
+            }
+           
+			if(mapSource.containsKey(CITY)){
+				   adTrackMap.put(CITY, mapSource.get(CITY).toString());
+            }
+         
+			if(mapSource.containsKey(ISP)){
+				 adTrackMap.put(ISP, mapSource.get(ISP).toString());
+            }
+           
+			if(mapSource.containsKey(VID)){
+				  adTrackMap.put(VID, mapSource.get(VID).toString());
+            }
+          
             if(mapSource.containsKey(SE)){
             	 adTrackMap.put(SE, mapSource.get(SE).toString());
             }
-            adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
-            adTrackMap.put(CLIENT_TIME, mapSource.get(CLIENT_TIME).toString());
-            adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
-            adTrackMap.put(RF_TYPE, mapSource.get(RF_TYPE).toString());
-            adTrackMap.put(HOST, mapSource.get(HOST).toString());
-            adTrackMap.put(KW, mapSource.get(KW).toString());
-            adTrackMap.put(VERSION, mapSource.get(VERSION).toString());
-            adTrackMap.put(METHOD, mapSource.get(METHOD).toString());
-            adTrackMap.put(VISITOR_IDENTIFIER, mapSource.get(VISITOR_IDENTIFIER).toString());
-           
-            adTrackMap.put(REGION, mapSource.get(REGION).toString());
-            adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
-            adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            if(mapSource.containsKey(AD_TRACK)){
+            	adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
+            }
+            if(mapSource.containsKey(CLIENT_TIME)){
+            	 adTrackMap.put(CLIENT_TIME, mapSource.get(CLIENT_TIME).toString());
+            }
+            if(mapSource.containsKey(ENTRANCE)){
+            	adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            }
+            if(mapSource.containsKey(RF_TYPE)){
+            	  adTrackMap.put(RF_TYPE, mapSource.get(RF_TYPE).toString());
+            }
+            if(mapSource.containsKey(HOST)){
+            	adTrackMap.put(HOST, mapSource.get(HOST).toString());
+            }
+            if(mapSource.containsKey(KW)){
+            	 adTrackMap.put(KW, mapSource.get(KW).toString());
+            }
+            if(mapSource.containsKey(VERSION)){
+            	 adTrackMap.put(VERSION, mapSource.get(VERSION).toString());
+            }
+            if(mapSource.containsKey(METHOD)){
+            	 adTrackMap.put(METHOD, mapSource.get(METHOD).toString());
+            }
+           if(mapSource.containsKey(VISITOR_IDENTIFIER)){
+	              adTrackMap.put(VISITOR_IDENTIFIER, mapSource.get(VISITOR_IDENTIFIER).toString());
+            }
+            
+			if(mapSource.containsKey(REGION)){
+				 adTrackMap.put(REGION, mapSource.get(REGION).toString());
+            }
+			if(mapSource.containsKey(DOMAIN)){
+				 adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
+            }
+			if(mapSource.containsKey(ENTRANCE)){
+				adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            }
             if(PLACEHOLDER.equals(adTrackMap.get(RF).toString().trim())){
             	adTrackMap.put(RF, "直接访问");
             }
