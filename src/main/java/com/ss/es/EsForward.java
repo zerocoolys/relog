@@ -370,7 +370,7 @@ public class EsForward implements Constants {
             	 adTrackMap.put(RF, mapSource.get(AD_RF).toString());
             	 adTrackMap.put(AD_RF, mapSource.get(AD_RF).toString());
             }else{
-            	Map<String, String> params = URLRequest(CURR_ADDRESS);
+            	Map<String, String> params = URLRequest(mapSource.get(CURR_ADDRESS).toString());
             	if(params.containsKey(AD_RF)){
             		 adTrackMap.put(RF, params.get(AD_RF));
             	}else{
