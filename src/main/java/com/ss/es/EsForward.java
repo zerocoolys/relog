@@ -203,6 +203,13 @@ public class EsForward implements Constants {
                     Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
+                        String locTemp = mapSource.get(CURR_ADDRESS).toString();
+                        int lastIndex = locTemp.length() - 1;
+                        if (Objects.equals('/', locTemp.charAt(lastIndex))) {
+                            locTemp = locTemp.substring(0, lastIndex);
+                            mapSource.put(CURR_ADDRESS, locTemp);
+                            locTemp = null;
+                        }
                         addRequest(client, requestQueue, EventProcessor.handle(mapSource));
                         continue;
                     } else if (!xyCoordinateInfo.isEmpty()) {
