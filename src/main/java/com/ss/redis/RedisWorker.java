@@ -1,10 +1,10 @@
 package com.ss.redis;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Maps;
 import com.ss.es.EsForward;
 import com.ss.main.Constants;
 import com.ss.parser.IPParser;
-import org.elasticsearch.common.collect.Maps;
 import redis.clients.jedis.Jedis;
 
 import java.util.List;

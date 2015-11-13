@@ -1,20 +1,18 @@
 package com.ss.es;
 
+import com.google.common.collect.Lists;
 import com.ss.main.Constants;
 import com.ss.parser.GarbledCodeParser;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
 import com.ss.utils.UrlUtils;
-
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Lists;
-
 import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
@@ -22,11 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -44,12 +38,12 @@ public class EsForward implements Constants {
     private final ExecutorService preHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new DataPreHandleThreadFactory());
 
     private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new EsRequestThreadFactory());
-    
-	private final GaProcessor gaProcessor;
-    
+
+    private final GaProcessor gaProcessor;
+
     private final PageConversionProcessor pageConversionProcessor;
-    
-    
+
+
     public EsForward(TransportClient client) {
         this.pageConversionProcessor = new PageConversionProcessor(client);
         this.gaProcessor = new GaProcessor();
@@ -186,8 +180,8 @@ public class EsForward implements Constants {
 
                     //页面转化
                     pageConversionProcessor.add(mapSource, esType);
-                    
-                   
+
+
 //                    // TEST CODE
 //                    if (TEST_TRACK_ID.equals(trackId)) {
 //                        MonitorService.getService().data_ready();
@@ -199,7 +193,7 @@ public class EsForward implements Constants {
                     String promotionUrlInfo = mapSource.getOrDefault(UT, EMPTY_STRING).toString();
                     String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
                     String pcname = mapSource.getOrDefault(PAGE_CONVERSION_NAME, EMPTY_STRING).toString();//页面转化
-                  
+
                     Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
@@ -233,18 +227,18 @@ public class EsForward implements Constants {
                         adTrackMap.put(AD_CREATIVE, mapSource.get(AD_CREATIVE).toString());
                         adTrackMap.put(REMOTE, mapSource.get(REMOTE).toString());
                         adTrackMap.put(UNIX_TIME, Long.parseLong(mapSource.get(UNIX_TIME).toString()));
-                        String ipAdsDupliKey = trackId+":ads" + DELIMITER + dateString;
+                        String ipAdsDupliKey = trackId + ":ads" + DELIMITER + dateString;
                         long adSstatusCode = jedis.sadd(ipAdsDupliKey, mapSource.get(REMOTE).toString());
                         jedis.expire(ipAdsDupliKey, ONE_DAY_SECONDS + 3600);
                         adTrackMap.put(IP_DUPLICATE, adSstatusCode);
 
                     }
                     mapSource.put(TYPE, esType);
-                   /**
-                    * Cache  - 保存访问信息
-                    */
+                    /**
+                     * Cache  - 保存访问信息
+                     */
                     gaProcessor.add(mapSource);
-                    
+
                     // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                     int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
 
@@ -338,19 +332,19 @@ public class EsForward implements Constants {
                     Consumer<String> pathConsumer = (String c) -> pathMap.put(HTTP_PATH + (integer.getAndIncrement()), c);
                     Arrays.asList(location.split("/")).stream().filter((p) -> !p.isEmpty() || !p.startsWith(HTTP_PREFIX)).forEach(pathConsumer);
                     mapSource.put(PATHS, pathMap);
-                    
-                    if(!adTrackInfo.isEmpty()){
-                    	 fillingDate(mapSource,adTrackMap);
-                    	 addRequest(client, requestQueue, adTrackMap);
+
+                    if (!adTrackInfo.isEmpty()) {
+                        fillingDate(mapSource, adTrackMap);
+                        addRequest(client, requestQueue, adTrackMap);
                     }
-                    if(!pcname.isEmpty()){
-                     	 mapSource.put(TYPE, esType + ES_TYPE_PAGE_SUFFIX);
-                     }
-                   
-                  
+                    if (!pcname.isEmpty()) {
+                        mapSource.put(TYPE, esType + ES_TYPE_PAGE_SUFFIX);
+                    }
+
+
                     addRequest(client, requestQueue, mapSource);
 
-                   
+
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
 //                    MonitorService.getService().data_error();
@@ -363,133 +357,132 @@ public class EsForward implements Constants {
             }
         }
 
-		private void fillingDate(Map<String, Object> mapSource, Map<String, Object> adTrackMap) {
+        private void fillingDate(Map<String, Object> mapSource, Map<String, Object> adTrackMap) {
             adTrackMap.put(TT, mapSource.get(TT).toString());
-            
-            if(mapSource.containsKey(AD_RF)){
-            	 adTrackMap.put(RF, mapSource.get(AD_RF).toString());
-            	 adTrackMap.put(AD_RF, mapSource.get(AD_RF).toString());
-            }else{
-            	Map<String, String> params = URLRequest(mapSource.get(CURR_ADDRESS).toString());
-            	if(params.containsKey(AD_RF)){
-            		 adTrackMap.put(RF, params.get(AD_RF));
-            	}else{
-            		 adTrackMap.put(RF, PLACEHOLDER);
-            	}
-            	
+
+            if (mapSource.containsKey(AD_RF)) {
+                adTrackMap.put(RF, mapSource.get(AD_RF).toString());
+                adTrackMap.put(AD_RF, mapSource.get(AD_RF).toString());
+            } else {
+                Map<String, String> params = URLRequest(mapSource.get(CURR_ADDRESS).toString());
+                if (params.containsKey(AD_RF)) {
+                    adTrackMap.put(RF, params.get(AD_RF));
+                } else {
+                    adTrackMap.put(RF, PLACEHOLDER);
+                }
+
             }
-            if(mapSource.containsKey(CURR_ADDRESS)){
-            	 adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
+            if (mapSource.containsKey(CURR_ADDRESS)) {
+                adTrackMap.put(CURR_ADDRESS, mapSource.get(CURR_ADDRESS).toString());
             }
-           
-			if(mapSource.containsKey(UCV)){
-				 adTrackMap.put(UCV, mapSource.get(UCV).toString());
+
+            if (mapSource.containsKey(UCV)) {
+                adTrackMap.put(UCV, mapSource.get(UCV).toString());
             }
-           
-			if(mapSource.containsKey(CITY)){
-				   adTrackMap.put(CITY, mapSource.get(CITY).toString());
+
+            if (mapSource.containsKey(CITY)) {
+                adTrackMap.put(CITY, mapSource.get(CITY).toString());
             }
-         
-			if(mapSource.containsKey(ISP)){
-				 adTrackMap.put(ISP, mapSource.get(ISP).toString());
+
+            if (mapSource.containsKey(ISP)) {
+                adTrackMap.put(ISP, mapSource.get(ISP).toString());
             }
-           
-			if(mapSource.containsKey(VID)){
-				  adTrackMap.put(VID, mapSource.get(VID).toString());
+
+            if (mapSource.containsKey(VID)) {
+                adTrackMap.put(VID, mapSource.get(VID).toString());
             }
-          
-            if(mapSource.containsKey(SE)){
-            	 adTrackMap.put(SE, mapSource.get(SE).toString());
+
+            if (mapSource.containsKey(SE)) {
+                adTrackMap.put(SE, mapSource.get(SE).toString());
             }
-            if(mapSource.containsKey(AD_TRACK)){
-            	adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
+            if (mapSource.containsKey(AD_TRACK)) {
+                adTrackMap.put(AD_TRACK, mapSource.get(AD_TRACK).toString());
             }
-            if(mapSource.containsKey(CLIENT_TIME)){
-            	 adTrackMap.put(CLIENT_TIME, mapSource.get(CLIENT_TIME).toString());
+            if (mapSource.containsKey(CLIENT_TIME)) {
+                adTrackMap.put(CLIENT_TIME, mapSource.get(CLIENT_TIME).toString());
             }
-            if(mapSource.containsKey(ENTRANCE)){
-            	adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            if (mapSource.containsKey(ENTRANCE)) {
+                adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
             }
-            if(mapSource.containsKey(RF_TYPE)){
-            	  adTrackMap.put(RF_TYPE, mapSource.get(RF_TYPE).toString());
+            if (mapSource.containsKey(RF_TYPE)) {
+                adTrackMap.put(RF_TYPE, mapSource.get(RF_TYPE).toString());
             }
-            if(mapSource.containsKey(HOST)){
-            	adTrackMap.put(HOST, mapSource.get(HOST).toString());
+            if (mapSource.containsKey(HOST)) {
+                adTrackMap.put(HOST, mapSource.get(HOST).toString());
             }
-            if(mapSource.containsKey(KW)){
-            	 adTrackMap.put(KW, mapSource.get(KW).toString());
+            if (mapSource.containsKey(KW)) {
+                adTrackMap.put(KW, mapSource.get(KW).toString());
             }
-            if(mapSource.containsKey(VERSION)){
-            	 adTrackMap.put(VERSION, mapSource.get(VERSION).toString());
+            if (mapSource.containsKey(VERSION)) {
+                adTrackMap.put(VERSION, mapSource.get(VERSION).toString());
             }
-            if(mapSource.containsKey(METHOD)){
-            	 adTrackMap.put(METHOD, mapSource.get(METHOD).toString());
+            if (mapSource.containsKey(METHOD)) {
+                adTrackMap.put(METHOD, mapSource.get(METHOD).toString());
             }
-           if(mapSource.containsKey(VISITOR_IDENTIFIER)){
-	              adTrackMap.put(VISITOR_IDENTIFIER, mapSource.get(VISITOR_IDENTIFIER).toString());
+            if (mapSource.containsKey(VISITOR_IDENTIFIER)) {
+                adTrackMap.put(VISITOR_IDENTIFIER, mapSource.get(VISITOR_IDENTIFIER).toString());
             }
-            
-			if(mapSource.containsKey(REGION)){
-				 adTrackMap.put(REGION, mapSource.get(REGION).toString());
+
+            if (mapSource.containsKey(REGION)) {
+                adTrackMap.put(REGION, mapSource.get(REGION).toString());
             }
-			if(mapSource.containsKey(DOMAIN)){
-				 adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
+            if (mapSource.containsKey(DOMAIN)) {
+                adTrackMap.put(DOMAIN, mapSource.get(DOMAIN).toString());
             }
-			if(mapSource.containsKey(ENTRANCE)){
-				adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
+            if (mapSource.containsKey(ENTRANCE)) {
+                adTrackMap.put(ENTRANCE, mapSource.get(ENTRANCE).toString());
             }
-            if(PLACEHOLDER.equals(adTrackMap.get(RF).toString().trim())){
-            	adTrackMap.put(RF, "直接访问");
+            if (PLACEHOLDER.equals(adTrackMap.get(RF).toString().trim())) {
+                adTrackMap.put(RF, "直接访问");
             }
-		}
-		
-		/**
-		 * 
-		 * @param URL
-		 * @description 解析url获取参数
-		 * @author ZhangHuaRong
-		 * @update 2015年10月28日 下午2:19:24
-		 */
-		private  Map<String, String> URLRequest(String URL) {
-			Map<String, String> mapRequest = new HashMap<String, String>();
-			String[] arrSplit = null;
-			String strUrlParam = TruncateUrlPage(URL);
-			if (strUrlParam == null) {
-				return mapRequest;
-			}
-			// 每个键值为一组
-			arrSplit = strUrlParam.split("[&]");
-			for (String strSplit : arrSplit) {
-				String[] arrSplitEqual = null;
-				arrSplitEqual = strSplit.split("[=]");
-				// 解析出键值
-				if (arrSplitEqual.length > 1) {
-					// 正确解析
-					mapRequest.put(arrSplitEqual[0], arrSplitEqual[1]);
-				} else {
-					if (arrSplitEqual[0] != "") {
-						// 只有参数没有值，不加入
-						mapRequest.put(arrSplitEqual[0], "");
-					}
-				}
-			}
-			return mapRequest;
-		}
-		
-		private  String TruncateUrlPage(String strURL) {
-			String strAllParam = null;
-			String[] arrSplit = null;
-			strURL = strURL.trim().toLowerCase();
-			arrSplit = strURL.split("[?]");
-			if (strURL.length() > 1) {
-				if (arrSplit.length > 1) {
-					if (arrSplit[1] != null) {
-						strAllParam = arrSplit[1];
-					}
-				}
-			}
-			return strAllParam;
-		}
+        }
+
+        /**
+         * @param URL
+         * @description 解析url获取参数
+         * @author ZhangHuaRong
+         * @update 2015年10月28日 下午2:19:24
+         */
+        private Map<String, String> URLRequest(String URL) {
+            Map<String, String> mapRequest = new HashMap<String, String>();
+            String[] arrSplit = null;
+            String strUrlParam = TruncateUrlPage(URL);
+            if (strUrlParam == null) {
+                return mapRequest;
+            }
+            // 每个键值为一组
+            arrSplit = strUrlParam.split("[&]");
+            for (String strSplit : arrSplit) {
+                String[] arrSplitEqual = null;
+                arrSplitEqual = strSplit.split("[=]");
+                // 解析出键值
+                if (arrSplitEqual.length > 1) {
+                    // 正确解析
+                    mapRequest.put(arrSplitEqual[0], arrSplitEqual[1]);
+                } else {
+                    if (arrSplitEqual[0] != "") {
+                        // 只有参数没有值，不加入
+                        mapRequest.put(arrSplitEqual[0], "");
+                    }
+                }
+            }
+            return mapRequest;
+        }
+
+        private String TruncateUrlPage(String strURL) {
+            String strAllParam = null;
+            String[] arrSplit = null;
+            strURL = strURL.trim().toLowerCase();
+            arrSplit = strURL.split("[?]");
+            if (strURL.length() > 1) {
+                if (arrSplit.length > 1) {
+                    if (arrSplit[1] != null) {
+                        strAllParam = arrSplit[1];
+                    }
+                }
+            }
+            return strAllParam;
+        }
 
     }
 
