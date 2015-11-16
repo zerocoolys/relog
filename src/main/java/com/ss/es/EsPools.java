@@ -60,9 +60,9 @@ public class EsPools {
                 for (String _host : hostArr[i].split(",")) {
                     String[] arr = _host.split(":");
                     if (arr.length == 1)
-                        addressList.add(new InetSocketTransportAddress(InetSocketAddress.createUnresolved(arr[0], 9300)));
+                        addressList.add(new InetSocketTransportAddress(new InetSocketAddress(arr[0], 9300)));
                     else if (arr.length == 2)
-                        addressList.add(new InetSocketTransportAddress(InetSocketAddress.createUnresolved(arr[0], Integer.valueOf(arr[1]))));
+                        addressList.add(new InetSocketTransportAddress(new InetSocketAddress(arr[0], Integer.parseInt(arr[1]))));
                 }
                 String clusterName = clusterArr[i];
 
