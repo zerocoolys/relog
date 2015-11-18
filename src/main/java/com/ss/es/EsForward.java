@@ -273,7 +273,7 @@ public class EsForward implements Constants {
                     // 来源类型解析
                     String refer = mapSource.get(RF).toString();
                     String tt = mapSource.get(TT).toString();
-                    String rf_type;
+                    String rf_type=VAL_RF_TYPE_OUTLINK;
                     if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) {  // 直接访问
                         mapSource.put(RF, PLACEHOLDER);
                         mapSource.put(SE, PLACEHOLDER);
