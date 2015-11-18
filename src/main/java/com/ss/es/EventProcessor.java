@@ -1,10 +1,18 @@
 package com.ss.es;
 
-import com.ss.main.Constants;
-
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.google.common.collect.Lists;
+import com.ss.main.Constants;
+import com.ss.parser.SearchEngineParser;
+import com.ss.utils.UrlUtils;
+
+import redis.clients.jedis.Jedis;
 
 /**
  * Created by dolphineor on 2015-6-9.
@@ -13,7 +21,7 @@ import java.util.Map;
  */
 class EventProcessor implements Constants {
 
-	public static Map<String, Object> handle(Map<String, Object> source) {
+	public static Map<String, Object> handle(Map<String, Object> source,Jedis jedis) throws UnsupportedEncodingException {
 		if (source.isEmpty())
 			return Collections.emptyMap();
 
@@ -36,6 +44,40 @@ class EventProcessor implements Constants {
 			sourceMap.put(ET_VALUE, EMPTY_STRING);
 		}
 
+		String tt = source.get(TT).toString();
+		String refer = sourceMap.get(RF).toString();
+		String rf_type;
+		String trackId = sourceMap.getOrDefault(T, EMPTY_STRING).toString();
+		String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
+		if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) { // 直接访问
+			sourceMap.put(SE, PLACEHOLDER);
+
+			rf_type = jedis.get(tt);
+			if (rf_type == null) {
+				sourceMap.put(RF_TYPE, rf_type);
+			}
+		} else {
+			List<String> skList = Lists.newArrayList();
+			boolean found = SearchEngineParser
+					.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
+			if (found) { // 搜索引擎
+				sourceMap.put(SE, skList.remove(0));
+				rf_type = jedis.get(tt);
+				if (rf_type == null) {
+					sourceMap.put(RF_TYPE, VAL_RF_TYPE_SE);
+				} else {
+					sourceMap.put(RF_TYPE, rf_type);
+				}
+			} else { // 外部链接
+				rf_type = jedis.get(tt);
+				if (rf_type == null) {
+					sourceMap.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
+				} else {
+					sourceMap.put(RF_TYPE, rf_type);
+				}
+			}
+		}
+		
 		sourceMap.put(INDEX, source.get(INDEX).toString());
 		sourceMap.put(TYPE, source.get(TYPE).toString());
 		sourceMap.put(TT, source.get(TT).toString());

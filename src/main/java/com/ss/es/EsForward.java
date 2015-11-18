@@ -204,7 +204,7 @@ public class EsForward implements Constants {
                             mapSource.put(CURR_ADDRESS, locTemp);
                             locTemp = null;
                         }
-                        addRequest(client, requestQueue, EventProcessor.handle(mapSource));
+                        addRequest(client, requestQueue, EventProcessor.handle(mapSource,jedis));
                         continue;
                     } else if (!xyCoordinateInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_XY_SUFFIX);
