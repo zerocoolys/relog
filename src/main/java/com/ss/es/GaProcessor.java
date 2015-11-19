@@ -41,8 +41,11 @@ public class GaProcessor implements Constants {
             return;
         }
 
-        String type = source.get(TYPE).toString();
+        if(source.get(VID) == null) {
+        	return ;
+        }
         String userId = source.get(VID).toString();
+        String type = source.get(TYPE).toString();
         String isNew = source.get(VISITOR_IDENTIFIER).toString();
 
         if (StringUtils.isBlank(type) || StringUtils.isBlank(userId)) {
