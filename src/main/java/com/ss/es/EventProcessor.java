@@ -45,9 +45,10 @@ class EventProcessor implements Constants {
 		}
 
 		String tt = source.get(TT).toString();
-		String refer = sourceMap.get(RF).toString();
+		String refer = source.get(RF).toString();
+		
 		String rf_type;
-		String trackId = sourceMap.getOrDefault(T, EMPTY_STRING).toString();
+		String trackId = source.getOrDefault(T, EMPTY_STRING).toString();
 		String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
 		if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) { // 直接访问
 			sourceMap.put(SE, PLACEHOLDER);
