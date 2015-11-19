@@ -105,6 +105,7 @@ public interface Constants {
     String DESTINATION_URL = "des_url";     // 关键词推广URL
     String NEW_VISIT = "n";         // 是否一次新的访问
     String XY = "xy";               // xy坐标信息
+    String DH = "dh";				// 页面高度
     String AD_TRACK = "atk";        // 广告跟踪流量标识
     String APP_IDENTIFIER = "app";  // (-1:非移动端标识, 0:未知, 1:移动浏览器, 2:App内置浏览器)
     /**
