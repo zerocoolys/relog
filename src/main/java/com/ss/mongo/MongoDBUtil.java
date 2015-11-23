@@ -1,6 +1,7 @@
 package com.ss.mongo;
 
 import com.mongodb.*;
+import com.ss.main.Constants;
 
 import org.bson.types.BasicBSONList;
 import org.bson.types.ObjectId;
@@ -12,8 +13,9 @@ import java.util.Map.Entry;
 public class MongoDBUtil {
 	private static Mongo connection = null;
 	private static DB db = null;
+	private static DB exitDb = null;
 	private static ResourceBundle settings;
-
+	
 	static {
 		try {
 			settings = ResourceBundle.getBundle("mongo");
@@ -24,6 +26,7 @@ public class MongoDBUtil {
 			connection = new Mongo(settings.getString("IP") + ":"
 					+ settings.getString("PORT"));
 			db = connection.getDB(settings.getString("DB_NAME"));
+			exitDb = connection.getDB(settings.getString("DB_NAME_OF_EXIT"));
 		} catch (MongoException | UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -44,59 +47,70 @@ public class MongoDBUtil {
 
 	/**
 	 * 判断集合是否存在
-	 *
+	 * 
 	 * @param collectionName
 	 * @return
 	 */
-	public static boolean collectionExists(String collectionName) {
+	public static boolean collectionExists(String dbName, String collectionName) {
+
+		if (Constants.DB_EXIT_NAME.equals(dbName)) {
+			return exitDb.collectionExists(collectionName);
+		}
+
 		return db.collectionExists(collectionName);
 	}
 
 	/**
 	 * 查询单个,按主键查询
-	 *
+	 * 
 	 * @param id
 	 * @param collectionName
 	 */
-	public static void findById(String id, String collectionName) {
+	public static void findById(String id, String dbName, String collectionName) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("_id", new ObjectId(id));
-		findOne(map, collectionName);
+		findOne(map, dbName, collectionName);
 	}
 
 	/**
 	 * 查询单个 <br>
 	 * ------------------------------<br>
-	 *
+	 * 
 	 * @param map
 	 * @param collectionName
+	 * @return 
 	 */
-	public static DBObject findOne(Map<String, Object> map,
+	public static DBObject findOne(Map<String, Object> map, String dbNmae,
 			String collectionName) {
 		DBObject dbObject = getMapped(map);
-		DBObject object = getCollection(collectionName).findOne(dbObject);
+		DBObject object = getCollection(dbNmae, collectionName).findOne(
+				dbObject);
 		return object;
 	}
 
 	/**
 	 * count
-	 *
+	 * 
 	 * @param dbs
 	 * @param collectionName
 	 * @return
 	 */
-	public static long count(DBObject dbs, String collectionName) {
-		return getCollection(collectionName).count(dbs);
+	public static long count(DBObject dbs, String dbName, String collectionName) {
+		return getCollection(dbName, collectionName).count(dbs);
 	}
 
 	/**
 	 * 查询
-	 *
+	 * 
 	 * @param dbObject
+	 * @param cursor
+	 * @param cursorPreparer
 	 * @param collectionName
 	 */
-	public static void find(DBObject dbObject, String collectionName) {
-		DBCursor dbCursor = getCollection(collectionName).find(dbObject);
+	public static void find(DBObject dbObject, String dbName,
+			String collectionName) {
+		DBCursor dbCursor = getCollection(dbName, collectionName)
+				.find(dbObject);
 		Iterator<DBObject> iterator = dbCursor.iterator();
 		while (iterator.hasNext()) {
 			print(iterator.next());
@@ -105,46 +119,42 @@ public class MongoDBUtil {
 
 	/**
 	 * 获取集合(表)
-	 *
+	 * 
 	 * @param collectionName
 	 * @return
 	 */
-	public static DBCollection getCollection(String collectionName) {
+	public static DBCollection getCollection(String dbName,
+			String collectionName) {
+
+		if (Constants.DB_EXIT_NAME.equals(dbName)) {
+			return exitDb.getCollection(collectionName);
+		}
+
 		return db.getCollection(collectionName);
 	}
 
 	/**
 	 * 获取所有集合(表)名称
-	 *
+	 * 
 	 * @return
 	 */
 	public static Set<String> getCollection() {
 		return db.getCollectionNames();
 	}
 
-	/**
-	 * 创建集合(表)
-	 *
-	 * @param collectionName
-	 * @param options
-	 */
-	public static void createCollection(String collectionName, DBObject options) {
-		if (!collectionExists(collectionName)) {
-			db.createCollection(collectionName, options);
-		}
-	}
-
+	
 	/**
 	 * 删除
-	 *
+	 * 
 	 * @param collectionName
 	 */
-	public static void dropCollection(String collectionName) {
-		DBCollection collection = getCollection(collectionName);
+	public static void dropCollection(String dbName, String collectionName) {
+		DBCollection collection = getCollection(dbName, collectionName);
 		collection.drop();
 	}
 
 	/**
+	 * 
 	 * @param map
 	 * @return
 	 */
@@ -198,7 +208,7 @@ public class MongoDBUtil {
 
 	/**
 	 * 插入数据
-	 *
+	 * 
 	 * @param dbs
 	 * @param collName
 	 */
@@ -208,7 +218,7 @@ public class MongoDBUtil {
 
 	/**
 	 * 批量插入数据
-	 *
+	 * 
 	 * @param dbses
 	 * @param collName
 	 */
@@ -227,7 +237,7 @@ public class MongoDBUtil {
 
 	/**
 	 * 根据id删除数据
-	 *
+	 * 
 	 * @param id
 	 * @param collName
 	 * @return 返回影响的数据条数
@@ -243,7 +253,8 @@ public class MongoDBUtil {
 
 	/**
 	 * 根据条件删除数据
-	 *
+	 * 
+	 * @param id
 	 * @param collName
 	 * @return 返回影响的数据条数
 	 */
@@ -261,7 +272,7 @@ public class MongoDBUtil {
 
 	/**
 	 * 更新数据
-	 *
+	 * 
 	 * @param find
 	 *            查询器
 	 * @param update
@@ -290,7 +301,7 @@ public class MongoDBUtil {
 
 	/**
 	 * 查询器(分页)
-	 *
+	 * 
 	 * @param ref
 	 * @param keys
 	 * @param start
@@ -305,9 +316,11 @@ public class MongoDBUtil {
 
 	/**
 	 * 查询器(不分页)
-	 *
+	 * 
 	 * @param ref
 	 * @param keys
+	 * @param start
+	 * @param limit
 	 * @param collName
 	 * @return
 	 */
@@ -320,38 +333,39 @@ public class MongoDBUtil {
 
 	/**
 	 * 判断集合中是否存在特定条件的记录
-	 *
+	 * 
 	 * @param map
 	 * @param collection
 	 * @return
 	 */
-	public static boolean dataExists(Map<String, Object> map, String collection) {
+	public static boolean dataExists(Map<String, Object> map, String dbName,
+			String collection) {
 		DBObject dbObject = getMapped(map);
-		return getCollection(collection).findOne(dbObject) != null;
+		return getCollection(dbName, collection).findOne(dbObject) != null;
 	}
 
 	/**
 	 * 查询特定条件的所有记录
-	 *
+	 * 
 	 * @param map
 	 * @param collection
 	 * @return
 	 */
 	public static List<DBObject> findByRefs(Map<String, Object> map,
-			String collection) {
-		return findByRefs(map, collection, new String[] {});
+			String dbName, String collection) {
+		return findByRefs(map, dbName, collection, new String[] {});
 	}
 
 	/**
 	 * 查询特定条件的所有记录,并返回特定的字段
-	 *
+	 * 
 	 * @param map
 	 * @param fields
 	 * @param collection
 	 * @return
 	 */
 	public static List<DBObject> findByRefs(Map<String, Object> map,
-			String collection, String... fields) {
+			String dbName, String collection, String... fields) {
 		DBObject dbObject = getMapped(map);
 		DBObject fieldObject = new BasicDBObject();
 		// 永远不显示_id字段
@@ -359,6 +373,8 @@ public class MongoDBUtil {
 		for (String field : fields) {
 			fieldObject.put(field, true);
 		}
-		return getCollection(collection).find(dbObject, fieldObject).toArray();
+		return getCollection(dbName, collection).find(dbObject, fieldObject)
+				.toArray();
 	}
+
 }

@@ -81,6 +81,8 @@ public interface Constants {
     String MONGODB_PREFIX_WEEK = "ga-week-";
     String MONGODB_PREFIX_MONTH = "ga-month-";
     
+    String MONGODB_EXIT_PREFIX = "exit-";
+    
     //Mongodb constant
     String NEW_CUSTOMER = "0";
     
@@ -177,6 +179,14 @@ public interface Constants {
     String VAL_RF_TYPE_OUTLINK = "3";   // 外部链接访问标识
 
     DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    
+	
+	public static String DB_EXIT_NAME = "exit";
+	public static String DB_CACHA_NAME = "cache";
+	
+	public static int EXIT_COUNT_INCREASE = 1;
+	public static int EXIT_COUNT_DECREASE = -1;
+	
 
     // TEST CONSTANT
     String TEST_TRACK_ID = "1234567890";

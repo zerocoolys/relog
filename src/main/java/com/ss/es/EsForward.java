@@ -40,6 +40,8 @@ public class EsForward implements Constants {
     private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new EsRequestThreadFactory());
 
     private final GaProcessor gaProcessor;
+    
+    private final ExitStatisticsProcessor exitStatisticsProcessor;
 
     private final PageConversionProcessor pageConversionProcessor;
 
@@ -47,6 +49,7 @@ public class EsForward implements Constants {
     public EsForward(TransportClient client) {
         this.pageConversionProcessor = new PageConversionProcessor(client);
         this.gaProcessor = new GaProcessor();
+        this.exitStatisticsProcessor = new ExitStatisticsProcessor();
         BlockingQueue<IndexRequest> requestQueue = new LinkedBlockingQueue<>();
         preHandle(client, requestQueue);
         handleRequest(client, requestQueue);
@@ -343,6 +346,12 @@ public class EsForward implements Constants {
 
 
                     addRequest(client, requestQueue, mapSource);
+                    
+                    /**
+                     * exitStatistics :退出次数统计
+                     * */
+                    exitStatisticsProcessor.add(mapSource);
+                    
 
 
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {

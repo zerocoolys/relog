@@ -62,13 +62,13 @@ public class GaProcessor implements Constants {
 
         // 保存数据----》每日记录
         String collName = getDayOfCollName();
-        saveData(collName, querier, store);
+        saveData(DB_CACHA_NAME,collName, querier, store);
         // 保存数据----》每周记录
         collName = getWeekOfCollName();
-        saveData(collName, querier, store);
+        saveData(DB_CACHA_NAME,collName, querier, store);
         // 保存数据----》每月记录
         collName = getMonthOfCollName();
-        saveData(collName, querier, store);
+        saveData(DB_CACHA_NAME,collName, querier, store);
 
     }
 
@@ -98,9 +98,9 @@ public class GaProcessor implements Constants {
         return collName;
     }
 
-    public void saveData(String collName, Map<String, Object> querier, Map<String, Object> store) {
+    public void saveData(String dbName,String collName, Map<String, Object> querier, Map<String, Object> store) {
 
-        DBObject dBObject = MongoDBUtil.findOne(querier, collName);
+        DBObject dBObject = MongoDBUtil.findOne(querier, dbName,collName);
 
         //有记录存在,更新PV
         if (dBObject != null) {
