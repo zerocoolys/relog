@@ -186,6 +186,8 @@ public interface Constants {
 	
 	public static int EXIT_COUNT_INCREASE = 1;
 	public static int EXIT_COUNT_DECREASE = -1;
+	public static int EXIT_COUNT_ZERO = 0;
+	
 	
 
     // TEST CONSTANT

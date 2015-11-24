@@ -1,6 +1,11 @@
 package com.ss.vo;
 
 public class ExitCountObject {
+
+	/** 类别 */
+	private String type;
+	/** 用户ID */
+	private String tt;
 	/** 当前访问路径 */
 	private String loc;
 	/** 来源路径 */
@@ -17,14 +22,24 @@ public class ExitCountObject {
 
 	}
 
-	public ExitCountObject(String loc, String rf, String rfType, String se,
-			String isNew) {
+	public ExitCountObject(String type, String tt, String loc, String rf,
+			String rfType, String se, String isNew) {
 		super();
+		this.type = type;
+		this.tt = tt;
 		this.loc = loc;
 		this.rf = rf;
 		this.rfType = rfType;
 		this.se = se;
 		this.isNew = isNew;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 	public String getLoc() {
@@ -65,6 +80,14 @@ public class ExitCountObject {
 
 	public void setIsNew(String isNew) {
 		this.isNew = isNew;
+	}
+
+	public String getTt() {
+		return tt;
+	}
+
+	public void setTt(String tt) {
+		this.tt = tt;
 	}
 
 }

@@ -47,7 +47,7 @@ public class ExitStatisticsProcessor implements Constants {
 		if (exitCount == null) {
 			return;
 		}
-		//连接表名称
+		// 连接表名称
 		String collName = getDayOfCollName();
 		DBCollection collTransatcion = MongoDBUtil.getCollection(DB_EXIT_NAME,
 				"transatcion");
@@ -55,13 +55,7 @@ public class ExitStatisticsProcessor implements Constants {
 		DBCollection collExit = MongoDBUtil.getCollection(DB_EXIT_NAME,
 				collName);
 
-		if (PLACEHOLDER.equals(exitCount.getRf())) { // 来源路径为 "-".
-			DBObject locQuery = getLocQueryObject(exitCount);
-			DBObject locUpdate = getLocUpdateObject(EXIT_COUNT_INCREASE);
-			collExit.update(locQuery, locUpdate, true, false);
-
-		} else {// 两段式提交保存
-
+		if (!PLACEHOLDER.equals(exitCount.getRf())) { // 来源路径为 "-".
 			DBObject transatcionObject = getTransatcionObject(
 					exitCount.getLoc(), exitCount.getRf());
 
@@ -152,11 +146,28 @@ public class ExitStatisticsProcessor implements Constants {
 				true);
 
 		DBObject rfUpdate = new BasicDBObject();
-		rfUpdate.put("$inc",
-				new BasicDBObject("exitCount", EXIT_COUNT_DECREASE));
 		rfUpdate.put("$push", new BasicDBObject("pendingTransactions",
 				transatcionObject.get("_id")));
+
+		DBObject dBObject = collExit.findOne(rfQuery);
+		// 是否存在
+		if (dBObject == null) {
+			rfUpdate.put("$inc",
+					new BasicDBObject("exitCount", EXIT_COUNT_ZERO));
+		} else {
+			Integer eCount = Integer.valueOf(dBObject.get("exitCount")
+					.toString());
+			if (eCount > 0) {
+				rfUpdate.put("$inc", new BasicDBObject("exitCount",
+						EXIT_COUNT_DECREASE));
+			} else {
+				rfUpdate.put("$inc", new BasicDBObject("exitCount",
+						EXIT_COUNT_ZERO));
+			}
+		}
+
 		WriteResult rfWR = collExit.update(rfQuery, rfUpdate, true, false);
+
 		String rfWRError = rfWR.getError();
 
 		DBObject locQuery = getExitCountObject(transatcionObject, exitCount,
@@ -180,11 +191,18 @@ public class ExitStatisticsProcessor implements Constants {
 			ExitCountObject exitCount, boolean isRf) {
 
 		DBObject queryObject = new BasicDBObject();
-
+		queryObject.put("type", exitCount.getType());
+		queryObject.put("tt", exitCount.getTt());
 		if (isRf) {
 			queryObject.put("url", exitCount.getRf());
 		} else {
 			queryObject.put("url", exitCount.getLoc());
+		}
+
+		queryObject.put("rfType", exitCount.getRfType());
+		queryObject.put("isNew", exitCount.getIsNew());
+		if (StringUtils.isNotBlank(exitCount.getSe())) {
+			queryObject.put("se", exitCount.getSe());
 		}
 
 		return queryObject;
@@ -195,7 +213,8 @@ public class ExitStatisticsProcessor implements Constants {
 			ExitCountObject exitCount, boolean isRf) {
 
 		DBObject queryObject = new BasicDBObject();
-
+		queryObject.put("type", exitCount.getType());
+		queryObject.put("tt", exitCount.getTt());
 		if (isRf) {
 			queryObject.put("url", exitCount.getRf());
 		} else {
@@ -241,6 +260,19 @@ public class ExitStatisticsProcessor implements Constants {
 
 	private ExitCountObject createExitCount(Map<String, Object> source) {
 
+		// 用户ID
+		String type = source.containsKey(TYPE) ? source.get(TYPE).toString()
+				: "";
+		if (StringUtils.isBlank(type)) {
+			return null;
+		}
+
+		// 用户ID
+		String tt = source.containsKey(TT) ? source.get(TT).toString() : "";
+		if (StringUtils.isBlank(tt)) {
+			return null;
+		}
+
 		// 当前路径
 		String loc = source.containsKey(CURR_ADDRESS) ? source
 				.get(CURR_ADDRESS).toString() : "";
@@ -258,7 +290,7 @@ public class ExitStatisticsProcessor implements Constants {
 		String isNew = source.containsKey(VISITOR_IDENTIFIER) ? source.get(
 				VISITOR_IDENTIFIER).toString() : "";
 
-		return new ExitCountObject(loc, rf, rfType, se, isNew);
+		return new ExitCountObject(type, tt, loc, rf, rfType, se, isNew);
 	}
 
 	public DBObject getLocQueryObject(ExitCountObject exitCount) {
@@ -280,7 +312,10 @@ public class ExitStatisticsProcessor implements Constants {
 	public DBObject getLocUpdateObject(int value) {
 		DBObject updateObject = new BasicDBObject();
 		updateObject.put("$inc", new BasicDBObject("exitCount", value));
-		updateObject.put("$set", new BasicDBObject("lastModified", GaDateUtils.getCurrentTime()));
+		updateObject
+				.put("$set",
+						new BasicDBObject("lastModified", GaDateUtils
+								.getCurrentTime()));
 
 		return updateObject;
 	}
