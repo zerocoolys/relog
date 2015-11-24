@@ -1,5 +1,9 @@
 package com.ss.main;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -54,7 +58,7 @@ public interface Constants {
     String ID = "_id";      // elasticsearch文档id
     String INDEX = "index"; // elasticsearch索引名称
     String TYPE = "_type";  // elasticsearch文档类型
-    
+
 
     // Elasticsearch field
     String METHOD = "method";
@@ -69,21 +73,21 @@ public interface Constants {
     String UNIX_TIME = "utime";     // 当前系统时间
     String CLIENT_TIME = "ctime";   // 访问当前页面的时间
     String VISITOR_IDENTIFIER = "ct";   // 新老访客标识(0->新访客, 1->老访客)
-    
+
     //Mongodb field
     String MONGODB_IS_NEW = "isNew";  // 是否为新访客(0->新访客, 1->老访客)
     String MONGODB_TYPE = "type"; // 业务：对应不同的客户。字段：对应elasticsearch文档类型
     String MONGODB_USER_ID = "userId"; // 对应VID。
     String MONGODB_PV = "pv"; // 对应VID。
-    
+
     //Mongodb table prefix
     String MONGODB_PREFIX = "ga-";
     String MONGODB_PREFIX_WEEK = "ga-week-";
     String MONGODB_PREFIX_MONTH = "ga-month-";
-    
+
     //Mongodb constant
     String NEW_CUSTOMER = "0";
-    
+
 
     /**
      * 当天访问的ip重复标识符(依赖于trackId和ip)
@@ -105,7 +109,7 @@ public interface Constants {
     String DESTINATION_URL = "des_url";     // 关键词推广URL
     String NEW_VISIT = "n";         // 是否一次新的访问
     String XY = "xy";               // xy坐标信息
-    String DH = "dh";				// 页面高度
+    String DH = "dh";                // 页面高度
     String AD_TRACK = "atk";        // 广告跟踪流量标识
     String APP_IDENTIFIER = "app";  // (-1:非移动端标识, 0:未知, 1:移动浏览器, 2:App内置浏览器)
     /**
@@ -182,7 +186,7 @@ public interface Constants {
     String TEST_TRACK_ID = "1234567890";
 
 
-    byte[] LOGO_IMG_BYTES = new byte[]{71, 73, 70, 56, 57, 97, 20, 0, 20, 0, -26, 118, 0, -3, -3, -3, -6, -6, -6, 3,
+    ByteBuf LOGO_IMG_BYTES = Unpooled.copiedBuffer(new byte[]{71, 73, 70, 56, 57, 97, 20, 0, 20, 0, -26, 118, 0, -3, -3, -3, -6, -6, -6, 3,
             -81, -17, 19, -76, -16, -17, -17, -17, -42, -14, -4, -14, -14, -14, -123, -40, -9, -100, -32, -7, 5, -81,
             -17, 8, -80, -17, -16, -16, -16, 2, -82, -17, -103, -33, -7, -4, -2, -1, 12, -79, -17, -2, -2, -2, 77, -58,
             -12, -52, -17, -4, 28, -73, -15, 11, -79, -16, 20, -76, -16, -12, -4, -2, 110, -47, -10, 4, -81, -17, 42,
@@ -256,6 +260,8 @@ public interface Constants {
             64, -86, 48, 40, 1, 36, 24, 63, 120, -40, 0, 85, -89, 1, 29, 11, 21, 32, 69, 24, -92, 1, 18, -109, 28, 0,
             -24, 56, -112, 32, 101, -35, -112, 72, 56, 6, 101, -120, 84, -61, 9, -124, 125, 28, 14, 48, -128, 116, 97,
             81, -124, 76, 15, 118, 88, -55, 34, -61, 68, -92, 53, -116, -68, -100, 10, 53, -89, 77, -93, 2, -34, -90,
-            102, 64, -47, -94, -109, -112, 45, 9, 48, 12, 104, -78, 33, 70, -110, 78, -127, 0, 0, 59};
+            102, 64, -47, -94, -109, -112, 45, 9, 48, 12, 104, -78, 33, 70, -110, 78, -127, 0, 0, 59});
+
+    CharSequence LOGO_IMG_LENGTH = HttpHeaders.newEntity(String.valueOf(LOGO_IMG_BYTES.readableBytes()));
 
 }

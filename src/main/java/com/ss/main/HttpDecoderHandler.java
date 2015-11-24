@@ -1,7 +1,6 @@
 package com.ss.main;
 
 import com.alibaba.fastjson.JSON;
-import com.ss.monitor.MonitorService;
 import com.ss.mq.producer.LogProducer;
 import com.ss.vo.MessageObject;
 import io.netty.buffer.ByteBuf;
@@ -11,7 +10,6 @@ import org.elasticsearch.common.Strings;
 
 import java.util.*;
 
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 
 /**
@@ -100,7 +98,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
 
     private void writeResponse(Channel channel, Set<Cookie> cookies) {
         // Convert the response content to a ChannelBuffer.
-        ByteBuf buf = copiedBuffer(LOGO_IMG_BYTES);
+        ByteBuf buf = LOGO_IMG_BYTES.duplicate();
 
         // Decide whether to close the connection or not.
         boolean close = request.headers().contains(CONNECTION, HttpHeaders.Values.CLOSE, true)
@@ -115,7 +113,7 @@ public class HttpDecoderHandler extends SimpleChannelInboundHandler<HttpObject> 
         if (!close) {
             // There's no need to add 'Content-Length' header
             // if this is the last response.
-            response.headers().set(CONTENT_LENGTH, buf.readableBytes());
+            response.headers().set(CONTENT_LENGTH, LOGO_IMG_LENGTH);
         }
 
         cookies.forEach(cookie -> response.headers().add(SET_COOKIE, ServerCookieEncoder.encode(cookie)));
