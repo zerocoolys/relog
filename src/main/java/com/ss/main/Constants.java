@@ -81,7 +81,7 @@ public interface Constants {
     String MONGODB_PREFIX_WEEK = "ga-week-";
     String MONGODB_PREFIX_MONTH = "ga-month-";
     
-    String MONGODB_EXIT_PREFIX = "exit-";
+    String MONGODB_EXIT_PREFIX = "exit-indicator-";
     
     //Mongodb constant
     String NEW_CUSTOMER = "0";
