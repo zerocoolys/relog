@@ -192,7 +192,7 @@ public class ExitStatisticsProcessor implements Constants {
 
 		DBObject queryObject = new BasicDBObject();
 		queryObject.put("type", exitCount.getType());
-		queryObject.put("tt", exitCount.getTt());
+		queryObject.put("userId", exitCount.getUserId());
 		if (isRf) {
 			queryObject.put("url", exitCount.getRf());
 		} else {
@@ -214,7 +214,7 @@ public class ExitStatisticsProcessor implements Constants {
 
 		DBObject queryObject = new BasicDBObject();
 		queryObject.put("type", exitCount.getType());
-		queryObject.put("tt", exitCount.getTt());
+		queryObject.put("userId", exitCount.getUserId());
 		if (isRf) {
 			queryObject.put("url", exitCount.getRf());
 		} else {
@@ -268,8 +268,8 @@ public class ExitStatisticsProcessor implements Constants {
 		}
 
 		// 用户ID
-		String tt = source.containsKey(TT) ? source.get(TT).toString() : "";
-		if (StringUtils.isBlank(tt)) {
+		String userId = source.containsKey(TT) ? source.get(TT).toString() : "";
+		if (StringUtils.isBlank(userId)) {
 			return null;
 		}
 
@@ -290,7 +290,7 @@ public class ExitStatisticsProcessor implements Constants {
 		String isNew = source.containsKey(VISITOR_IDENTIFIER) ? source.get(
 				VISITOR_IDENTIFIER).toString() : "";
 
-		return new ExitCountObject(type, tt, loc, rf, rfType, se, isNew);
+		return new ExitCountObject(type, userId, loc, rf, rfType, se, isNew);
 	}
 
 	public DBObject getLocQueryObject(ExitCountObject exitCount) {
