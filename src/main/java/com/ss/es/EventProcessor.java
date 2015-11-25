@@ -12,8 +12,6 @@ import com.ss.main.Constants;
 import com.ss.parser.SearchEngineParser;
 import com.ss.utils.UrlUtils;
 
-import redis.clients.jedis.Jedis;
-
 /**
  * Created by dolphineor on 2015-6-9.
  * <p>
@@ -21,7 +19,8 @@ import redis.clients.jedis.Jedis;
  */
 class EventProcessor implements Constants {
 
-	public static Map<String, Object> handle(Map<String, Object> source,Jedis jedis) throws UnsupportedEncodingException {
+	public static Map<String, Object> handle(Map<String, Object> source,
+			String rf_type, String siteUrl) throws UnsupportedEncodingException {
 		if (source.isEmpty())
 			return Collections.emptyMap();
 
@@ -46,31 +45,26 @@ class EventProcessor implements Constants {
 
 		String tt = source.get(TT).toString();
 		String refer = source.get(RF).toString();
-		
-		String rf_type;
-		String trackId = source.getOrDefault(T, EMPTY_STRING).toString();
-		String siteUrl = jedis.get(SITE_URL_PREFIX + trackId);
+
 		if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) { // 直接访问
 			sourceMap.put(SE, PLACEHOLDER);
 
-			rf_type = jedis.get(tt);
 			if (rf_type == null) {
 				sourceMap.put(RF_TYPE, rf_type);
 			}
 		} else {
 			List<String> skList = Lists.newArrayList();
-			boolean found = SearchEngineParser
-					.getSK(java.net.URLDecoder.decode(refer, StandardCharsets.UTF_8.name()), skList);
+			boolean found = SearchEngineParser.getSK(
+					java.net.URLDecoder.decode(refer,
+							StandardCharsets.UTF_8.name()), skList);
 			if (found) { // 搜索引擎
 				sourceMap.put(SE, skList.remove(0));
-				rf_type = jedis.get(tt);
 				if (rf_type == null) {
 					sourceMap.put(RF_TYPE, VAL_RF_TYPE_SE);
 				} else {
 					sourceMap.put(RF_TYPE, rf_type);
 				}
 			} else { // 外部链接
-				rf_type = jedis.get(tt);
 				if (rf_type == null) {
 					sourceMap.put(RF_TYPE, VAL_RF_TYPE_OUTLINK);
 				} else {
@@ -78,14 +72,16 @@ class EventProcessor implements Constants {
 				}
 			}
 		}
-		
+
 		sourceMap.put(INDEX, source.get(INDEX).toString());
 		sourceMap.put(TYPE, source.get(TYPE).toString());
 		sourceMap.put(TT, source.get(TT).toString());
 		sourceMap.put(VID, source.get(VID).toString());
 		sourceMap.put(CURR_ADDRESS, source.get(CURR_ADDRESS).toString());
-		sourceMap.put(UNIX_TIME, Long.parseLong(source.get(UNIX_TIME).toString()));
-		sourceMap.put(VISITOR_IDENTIFIER, Integer.parseInt(source.get(VISITOR_IDENTIFIER).toString()));
+		sourceMap.put(UNIX_TIME,
+				Long.parseLong(source.get(UNIX_TIME).toString()));
+		sourceMap.put(VISITOR_IDENTIFIER,
+				Integer.parseInt(source.get(VISITOR_IDENTIFIER).toString()));
 		sourceMap.put(REGION, source.get(REGION).toString());
 		sourceMap.put(CITY, source.get(CITY).toString());
 		sourceMap.put(RF, source.get(RF).toString());

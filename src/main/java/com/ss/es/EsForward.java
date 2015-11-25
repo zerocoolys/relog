@@ -197,6 +197,9 @@ public class EsForward implements Constants {
                     String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
                     String pcname = mapSource.getOrDefault(PAGE_CONVERSION_NAME, EMPTY_STRING).toString();//页面转化
 
+                    
+                    String tt = mapSource.get(TT).toString();
+                    
                     Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
@@ -207,7 +210,7 @@ public class EsForward implements Constants {
                             mapSource.put(CURR_ADDRESS, locTemp);
                             locTemp = null;
                         }
-                        addRequest(client, requestQueue, EventProcessor.handle(mapSource,jedis));
+                        addRequest(client, requestQueue, EventProcessor.handle(mapSource, jedis.get(tt), siteUrl));
                         continue;
                     } else if (!xyCoordinateInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_XY_SUFFIX);
@@ -275,7 +278,6 @@ public class EsForward implements Constants {
 
                     // 来源类型解析
                     String refer = mapSource.get(RF).toString();
-                    String tt = mapSource.get(TT).toString();
                     String rf_type=VAL_RF_TYPE_OUTLINK;
                     if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) {  // 直接访问
                         mapSource.put(RF, PLACEHOLDER);
