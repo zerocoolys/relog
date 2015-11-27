@@ -47,7 +47,7 @@ public class GaProcessor implements Constants {
 		if (source.get(TYPE) == null) {
 			return;
 		}
-		if (source.get(source.get(VISITOR_IDENTIFIER)) == null) {
+		if (source.get(VISITOR_IDENTIFIER) == null) {
 			return;
 		}
 
