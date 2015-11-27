@@ -260,7 +260,7 @@ public class ExitStatisticsProcessor implements Constants {
 
 	private ExitCountObject createExitCount(Map<String, Object> source) {
 
-		// 用户ID
+		// 用户类型
 		String type = source.containsKey(TYPE) ? source.get(TYPE).toString()
 				: "";
 		if (StringUtils.isBlank(type)) {

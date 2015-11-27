@@ -344,9 +344,6 @@ public class EsForward implements Constants {
                     }
 
 
-                    addRequest(client, requestQueue, mapSource);
-                    
-                    
                     /**
                      * Cache  - 保存访问信息
                      */
@@ -357,8 +354,7 @@ public class EsForward implements Constants {
                      * */
                     exitStatisticsProcessor.add(mapSource);
                     
-
-
+                    addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
 //                    MonitorService.getService().data_error();
