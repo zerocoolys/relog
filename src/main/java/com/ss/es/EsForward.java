@@ -240,10 +240,7 @@ public class EsForward implements Constants {
 
                     }
                     mapSource.put(TYPE, esType);
-                    /**
-                     * Cache  - 保存访问信息
-                     */
-                    gaProcessor.add(mapSource);
+                  
 
                     // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                     int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
@@ -348,6 +345,12 @@ public class EsForward implements Constants {
 
 
                     addRequest(client, requestQueue, mapSource);
+                    
+                    
+                    /**
+                     * Cache  - 保存访问信息
+                     */
+                    gaProcessor.add(mapSource);
                     
                     /**
                      * exitStatistics :退出次数统计
