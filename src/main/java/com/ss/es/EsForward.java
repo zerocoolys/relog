@@ -1,18 +1,21 @@
 package com.ss.es;
 
 import com.google.common.collect.Lists;
+import com.ss.log.RelogLog;
 import com.ss.main.Constants;
 import com.ss.parser.GarbledCodeParser;
 import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
 import com.ss.utils.UrlUtils;
+
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
+
 import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
@@ -145,6 +148,7 @@ public class EsForward implements Constants {
                     mapSource = queue.take();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    RelogLog.record(e.getMessage());
                 }
 
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
@@ -357,6 +361,7 @@ public class EsForward implements Constants {
                     addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
+                    RelogLog.record(e.getMessage() + "[  "+mapSource+"   ]");
 //                    MonitorService.getService().data_error();
                 } finally {
                     if (jedis != null) {
