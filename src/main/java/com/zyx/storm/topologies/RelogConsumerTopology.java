@@ -1,19 +1,27 @@
 package com.zyx.storm.topologies;
 
 import backtype.storm.Config;
-import backtype.storm.StormSubmitter;
+import backtype.storm.LocalCluster;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.InvalidTopologyException;
-import backtype.storm.topology.TopologyBuilder;
-import com.zyx.storm.bolts.CommonsBolt;
+import backtype.storm.spout.SchemeAsMultiScheme;
+import backtype.storm.tuple.Fields;
+import com.zyx.storm.elasticsearch.common.DefaultEsTupleMapper;
+import com.zyx.storm.elasticsearch.common.EsConfig;
+import com.zyx.storm.elasticsearch.trident.EsStateFactory;
+import com.zyx.storm.topologies.trident.FilterValidate;
+import com.zyx.storm.topologies.trident.UpdateField;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.ParseException;
 import storm.kafka.BrokerHosts;
-import storm.kafka.KafkaSpout;
-import storm.kafka.SpoutConfig;
+import storm.kafka.StringScheme;
 import storm.kafka.ZkHosts;
+import storm.kafka.trident.OpaqueTridentKafkaSpout;
+import storm.kafka.trident.TransactionalTridentKafkaSpout;
+import storm.kafka.trident.TridentKafkaConfig;
+import storm.trident.TridentTopology;
 
 /**
  * Created by yousheng on 15/12/1.
@@ -32,32 +40,50 @@ public class RelogConsumerTopology extends BaseTopology {
             return;
         }
 
-        int numWorker = Integer.parseInt(cmd.getOptionValue("n"));
+//        int numWorker = Integer.parseInt(cmd.getOptionValue("n"));
         String zkHost = cmd.getOptionValue("z");
         String topic = cmd.getOptionValue("t");
 
-        String id = cmd.getOptionValue("s");
-        int p = Integer.parseInt(cmd.getOptionValue("p"));
-
-
-        TopologyBuilder builder = new TopologyBuilder();
+//        String id = cmd.getOptionValue("s");
+//        int p = Integer.parseInt(cmd.getOptionValue("p"));
+//
+//        String zkRoot = "/brokers";
 
 
         BrokerHosts hosts = new ZkHosts(zkHost, "/brokers");
 
-        String zkRoot = "/brokers";
+        TridentKafkaConfig tridentKafkaConfig = new TridentKafkaConfig(hosts, topic);
 
-        SpoutConfig spoutConfig = new SpoutConfig(hosts, topic, zkRoot, id);
+        tridentKafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
+        OpaqueTridentKafkaSpout spout = new OpaqueTridentKafkaSpout(tridentKafkaConfig);
 
+        TridentTopology topology = new TridentTopology();
 
-        builder.setSpout("kafkaSpout", new KafkaSpout(spoutConfig), p);
-        builder.setBolt("commonsBolt", new CommonsBolt(), p);
+        EsConfig esConfig = new EsConfig("es-cluster", new String[]{"192.168.1.10:9200"});
+
+        EsStateFactory esStateFactory = new EsStateFactory(esConfig, new DefaultEsTupleMapper());
+
+        topology.newStream("kafkaStream", spout)
+                .each(new Fields("str"), new FilterValidate())
+                .each(new Fields("str"), new UpdateField(), new Fields("data"))
+                .persistentAggregate(esStateFactory,);
+
+//                .persistentAggregate(esStateFactory,new Field);
+
+//        builder.setSpout("kafkaTridentTopo", "kafkaStrem", "1", kafkaSpout, 2, "batchGroup");
+//
+//        builder.setSpout("kafkaSpout", new KafkaSpout(spoutConfig), p);
+//        builder.setBolt("commonsBolt", new CommonsBolt(), p);
 
         Config conf = new Config();
         conf.setDebug(true);
 
 //        if (args != null && args.length > 0) {
-        conf.setNumWorkers(numWorker);
-        StormSubmitter.submitTopologyWithProgressBar("relogConsumerTopology", conf, builder.createTopology());
+//        conf.setNumWorkers(numWorker);
+//        StormSubmitter.submitTopologyWithProgressBar("relogConsumerTopology", conf, topology.build());
+
+
+        LocalCluster cluster = new LocalCluster();
+        cluster.submitTopology("relogConsumerTopology", conf, topology.build());
     }
 }

@@ -1,4 +1,4 @@
-package com.zyx.storm.bolts;
+package com.zyx.storm.mongodb;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Created by yousheng on 15/12/1.
  */
-public class EsBolt extends BaseRichBolt {
+public class MongodbBolt extends BaseRichBolt {
     private OutputCollector _outputCollector;
 
     @Override
