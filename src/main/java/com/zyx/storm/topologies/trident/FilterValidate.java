@@ -11,6 +11,6 @@ public class FilterValidate extends BaseFilter {
     @Override
     public boolean isKeep(TridentTuple tuple) {
         System.out.println("tuple.getValues() = " + tuple.getValues());
-        return false;
+        return true;
     }
 }

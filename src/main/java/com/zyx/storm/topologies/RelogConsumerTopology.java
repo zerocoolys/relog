@@ -10,8 +10,12 @@ import backtype.storm.tuple.Fields;
 import com.zyx.storm.elasticsearch.common.DefaultEsTupleMapper;
 import com.zyx.storm.elasticsearch.common.EsConfig;
 import com.zyx.storm.elasticsearch.trident.EsStateFactory;
+import com.zyx.storm.elasticsearch.trident.EsUpdater;
+import com.zyx.storm.topologies.function.PrepareForES;
 import com.zyx.storm.topologies.trident.FilterValidate;
 import com.zyx.storm.topologies.trident.UpdateField;
+import com.zyx.storm.topologies.trident.ValidityFilter;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.ParseException;
@@ -41,8 +45,11 @@ public class RelogConsumerTopology extends BaseTopology {
         }
 
 //        int numWorker = Integer.parseInt(cmd.getOptionValue("n"));
-        String zkHost = cmd.getOptionValue("z");
-        String topic = cmd.getOptionValue("t");
+ //       String zkHost = cmd.getOptionValue("z");
+//        String topic = cmd.getOptionValue("t");
+        
+        String zkHost = "192.168.1.110:2181";
+        String topic = "domain10";
 
 //        String id = cmd.getOptionValue("s");
 //        int p = Integer.parseInt(cmd.getOptionValue("p"));
@@ -59,14 +66,21 @@ public class RelogConsumerTopology extends BaseTopology {
 
         TridentTopology topology = new TridentTopology();
 
-        EsConfig esConfig = new EsConfig("es-cluster", new String[]{"192.168.1.10:9200"});
+      //  EsConfig esConfig = new EsConfig("es-cluster", new String[]{"192.168.1.10:9200"});
+        EsConfig esConfig = new EsConfig("es-intern-cluster", new String[]{"192.168.100.10:29300"});
 
         EsStateFactory esStateFactory = new EsStateFactory(esConfig, new DefaultEsTupleMapper());
 
-        topology.newStream("kafkaStream", spout)
+      /*  topology.newStream("kafkaStream", spout)
                 .each(new Fields("str"), new FilterValidate())
                 .each(new Fields("str"), new UpdateField(), new Fields("data"))
-                .persistentAggregate(esStateFactory,);
+                .persistentAggregate(esStateFactory,);*/
+        
+        topology.newStream("kafkaStream", spout)
+        .each(new Fields("str"), new ValidityFilter())
+   //     .each(new Fields("str"), new ToUpper(), new Fields("upperString"))
+        .each(new Fields("str"), new PrepareForES(), new Fields("index", "type", "id", "source"))
+        .partitionPersist(esStateFactory, new Fields("index", "type", "id", "source"), new EsUpdater(), new Fields());
 
 //                .persistentAggregate(esStateFactory,new Field);
 
