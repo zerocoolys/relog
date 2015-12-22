@@ -1,5 +1,6 @@
 package com.ss.es;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.ss.log.RelogLog;
 import com.ss.main.Constants;
@@ -9,6 +10,7 @@ import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
 import com.ss.utils.UrlUtils;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -47,7 +49,7 @@ public class EsForward implements Constants {
     private final ExitStatisticsProcessor exitStatisticsProcessor;
 
     private final PageConversionProcessor pageConversionProcessor;
-
+    private final static String REDIS_QUEUE = "test";
 
     public EsForward(TransportClient client) {
         this.pageConversionProcessor = new PageConversionProcessor(client);
@@ -59,7 +61,9 @@ public class EsForward implements Constants {
     }
 
     public void add(Map<String, Object> obj) {
-        queue.add(obj);
+    	JSONObject jsonObject = new JSONObject(obj);
+    	JRedisPools.getConnection().lpush(REDIS_QUEUE, jsonObject.toJSONString());
+//        queue.add(obj);
     }
 
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
@@ -145,8 +149,13 @@ public class EsForward implements Constants {
             while (true) {
                 Map<String, Object> mapSource = null;
                 try {
-                    mapSource = queue.take();
-                } catch (InterruptedException e) {
+//                    mapSource = queue.take();
+                    
+                    String value =	JRedisPools.getConnection().lpop(REDIS_QUEUE);
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapSource = mapper.readValue(value, Map.class);
+                    
+                } catch (Exception e) {
                     e.printStackTrace();
                     RelogLog.record(e.getMessage());
                 }
