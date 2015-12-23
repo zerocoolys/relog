@@ -6,9 +6,11 @@ consumerThreadNumber=8
 
 BASE_DIR=`dirname $0`
 JAVA_HOME=`${JAVA_HOME}`
+DUMP_PATH=/root/dump
+
 if [${JAVA_HOME} == ""]
     then
-        JAVA_HOME=/usr/local/jdk/jdk1.8.0_45
+        JAVA_HOME=/usr/share/java /usr/local/java/jdk1.8.0_45
 fi
 
 while getopts "m:b:t:n:" arg
@@ -32,4 +34,4 @@ while getopts "m:b:t:n:" arg
         esac
     done
 
-${JAVA_HOME}/bin/java -Dfile.encoding=UTF-8 -Xms2g -Xmx2g -cp ${BASE_DIR}:${BASE_DIR}/lib/*:${BASE_DIR}/conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}
+${JAVA_HOME}/bin/java -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=${DUMP_PATH}  -Dfile.encoding=UTF-8 -Xms1g -Xmx1g -cp ${BASE_DIR}:${BASE_DIR}/lib/*:${BASE_DIR}/conf com.ss.main.RelogConsumerMain ${mode} ${topic} ${bulk} ${consumerThreadNumber}

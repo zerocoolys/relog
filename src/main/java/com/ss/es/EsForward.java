@@ -1,5 +1,8 @@
 package com.ss.es;
 
+
+
+import org.apache.commons.lang3.StringUtils;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.ss.log.RelogLog;
@@ -159,8 +162,19 @@ public class EsForward implements Constants {
 
                     jedis = JRedisPools.getConnection();
                     String value = jedis.lpop(REDIS_QUEUE);
+
+                   if( StringUtils.isBlank(value)){
+                    	continue;
+                    }
                     ObjectMapper mapper = new ObjectMapper();
                     mapSource = mapper.readValue(value, Map.class);
+                   
+                   long time = System.currentTimeMillis(); 
+                 
+                  if(time%30000==0){
+                        RelogLog.record("redis "+REDIS_QUEUE+"length:  "+jedis.llen("REDIS_QUEUE"));
+                        System.out.println("value=="+mapSource);
+                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();
