@@ -9,7 +9,6 @@ import com.ss.parser.KeywordExtractor;
 import com.ss.parser.SearchEngineParser;
 import com.ss.redis.JRedisPools;
 import com.ss.utils.UrlUtils;
-
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -17,7 +16,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
-
 import redis.clients.jedis.Jedis;
 
 import java.io.UnsupportedEncodingException;
@@ -38,18 +36,18 @@ public class EsForward implements Constants {
 
     private final int HANDLER_WORKERS = Runtime.getRuntime().availableProcessors() * 2;
 
-    private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
+//    private final BlockingQueue<Map<String, Object>> queue = new LinkedBlockingQueue<>();
 
     private final ExecutorService preHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new DataPreHandleThreadFactory());
 
     private final ExecutorService requestHandlerExecutor = Executors.newFixedThreadPool(HANDLER_WORKERS, new EsRequestThreadFactory());
 
     private final GaProcessor gaProcessor;
-    
+
     private final ExitStatisticsProcessor exitStatisticsProcessor;
 
     private final PageConversionProcessor pageConversionProcessor;
-    private final static String REDIS_QUEUE = "test";
+    private final static String REDIS_QUEUE = "rsq";
 
     public EsForward(TransportClient client) {
         this.pageConversionProcessor = new PageConversionProcessor(client);
@@ -61,9 +59,16 @@ public class EsForward implements Constants {
     }
 
     public void add(Map<String, Object> obj) {
-    	JSONObject jsonObject = new JSONObject(obj);
-    	JRedisPools.getConnection().lpush(REDIS_QUEUE, jsonObject.toJSONString());
-//        queue.add(obj);
+        JSONObject jsonObject = new JSONObject(obj);
+        Jedis jedis = null;
+        try {
+            jedis = JRedisPools.getConnection();
+            jedis.lpush(REDIS_QUEUE, jsonObject.toJSONString());
+        } finally {
+            if (jedis != null) {
+                jedis.close();
+            }
+        }
     }
 
     private void preHandle(TransportClient client, BlockingQueue<IndexRequest> requestQueue) {
@@ -148,16 +153,22 @@ public class EsForward implements Constants {
         public void run() {
             while (true) {
                 Map<String, Object> mapSource = null;
+                Jedis jedis = null;
+
                 try {
-//                    mapSource = queue.take();
-                    
-                    String value =	JRedisPools.getConnection().lpop(REDIS_QUEUE);
+
+                    jedis = JRedisPools.getConnection();
+                    String value = jedis.lpop(REDIS_QUEUE);
                     ObjectMapper mapper = new ObjectMapper();
                     mapSource = mapper.readValue(value, Map.class);
-                    
+
                 } catch (Exception e) {
                     e.printStackTrace();
                     RelogLog.record(e.getMessage());
+                } finally {
+                    if (jedis != null) {
+                        jedis.close();
+                    }
                 }
 
                 if (mapSource == null || !mapSource.containsKey(T) || !mapSource.containsKey(TT))
@@ -166,7 +177,6 @@ public class EsForward implements Constants {
                 long clientTime = Long.parseLong(mapSource.remove(DT).toString());
                 mapSource.put(CLIENT_TIME, clientTime);
 
-                Jedis jedis = null;
                 try {
                     jedis = JRedisPools.getConnection();
                     String trackId = mapSource.getOrDefault(T, EMPTY_STRING).toString();
@@ -210,9 +220,9 @@ public class EsForward implements Constants {
                     String adTrackInfo = mapSource.getOrDefault(AD_TRACK, EMPTY_STRING).toString();
                     String pcname = mapSource.getOrDefault(PAGE_CONVERSION_NAME, EMPTY_STRING).toString();//页面转化
 
-                    
+
                     String tt = mapSource.get(TT).toString();
-                    
+
                     Map<String, Object> adTrackMap = new HashMap<>();
                     if (!eventInfo.isEmpty()) {
                         mapSource.put(TYPE, esType + ES_TYPE_EVENT_SUFFIX);
@@ -253,7 +263,7 @@ public class EsForward implements Constants {
 
                     }
                     mapSource.put(TYPE, esType);
-                  
+
 
                     // 检测是否是一次的新的访问(1->新的访问, 0->同一次访问)
                     int identifier = Integer.valueOf(mapSource.getOrDefault(NEW_VISIT, 0).toString());
@@ -288,7 +298,7 @@ public class EsForward implements Constants {
 
                     // 来源类型解析
                     String refer = mapSource.get(RF).toString();
-                    String rf_type=VAL_RF_TYPE_OUTLINK;
+                    String rf_type = VAL_RF_TYPE_OUTLINK;
                     if (PLACEHOLDER.equals(refer) || UrlUtils.match(siteUrl, refer)) {  // 直接访问
                         mapSource.put(RF, PLACEHOLDER);
                         mapSource.put(SE, PLACEHOLDER);
@@ -361,16 +371,16 @@ public class EsForward implements Constants {
                      * Cache  - 保存访问信息
                      */
                     gaProcessor.add(mapSource);
-                    
+
                     /**
                      * exitStatistics :退出次数统计
                      * */
                     exitStatisticsProcessor.add(mapSource);
-                    
+
                     addRequest(client, requestQueue, mapSource);
                 } catch (NullPointerException | UnsupportedEncodingException | MalformedURLException e) {
                     e.printStackTrace();
-                    RelogLog.record(e.getMessage() + "[  "+mapSource+"   ]");
+                    RelogLog.record(e.getMessage() + "[  " + mapSource + "   ]");
 //                    MonitorService.getService().data_error();
                 } finally {
                     if (jedis != null) {
